@@ -1,0 +1,114 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  width: 90%;
+  max-width: 400px;
+  padding: 24px;
+  border: 1px solid black;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.participantSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addParticipant {
+  display: flex;
+  gap: 8px;
+}
+
+.addParticipant input {
+  flex: 1;
+}
+
+.addButton {
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.addButton:hover {
+  opacity: 0.8;
+}
+
+.participantList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.participantItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+}
+.participantItem button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+}
+.participantItem button:hover {
+  color: black;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.buttons button {
+  flex: 1;
+}
+
+.cancel {
+  background-color: transparent;
+  color: black;
+  border: 1px solid black;
+}
+.cancel:hover {
+  background-color: #f0f0f0;
+}

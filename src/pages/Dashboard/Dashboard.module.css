@@ -1,0 +1,128 @@
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.greeting {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+/* Группы */
+.groupsSection {
+  margin-bottom: 32px;
+}
+
+.groupsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  margin: 0;
+}
+
+.viewAllLink {
+  font-size: 14px;
+  text-decoration: none;
+  color: black;
+}
+
+.createButton {
+  width: 100%;
+  margin-bottom: 12px;
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.createButton:hover {
+  opacity: 0.8;
+}
+
+.searchWrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 32px 8px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 0px;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Список групп — вертикально с небольшими отступами */
+.groupsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.emptyText {
+  text-align: center;
+  color: #666;
+  margin-top: 12px;
+}
+
+/* Последние платежи */
+.recentSection {
+  margin-bottom: 32px;
+}
+
+.recentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recentCard {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+
+.groupName {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+.expenseDate {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+/* Добавить в конец файла */
+.expenseDate {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}

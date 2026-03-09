@@ -1,0 +1,98 @@
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.card {
+  border: 1px solid black;
+  padding: 16px;
+  margin-bottom: 24px;
+  background-color: white;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 500;
+  color: #333;
+}
+
+.subtitle {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.participants {
+  border: 1px solid #ccc;
+  padding: 8px;
+  background-color: #f9f9f9;
+}
+
+.participantRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.participantRow:last-child {
+  border-bottom: none;
+}
+
+.debt {
+  font-size: 12px;
+  color: #666;
+  margin-left: 8px;
+}
+
+.status {
+  min-width: 140px;
+  text-align: right;
+}
+
+.paid {
+  color: green;
+}
+.unpaid {
+  color: #d32f2f;
+}
+
+.markButton {
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.markButton:hover {
+  opacity: 0.8;
+}
+.requestButton, .confirmButton {
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.requestButton:hover, .confirmButton:hover {
+  opacity: 0.8;
+}
+.pending {
+  color: #ff9800;
+}

@@ -1,0 +1,48 @@
+.container {
+  padding: 30px 20px;
+}
+
+.title {
+  text-align: left; 
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.switch {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  width: fit-content;
+  white-space: nowrap; /* запрещаем перенос */
+}
+.error {
+  color: #d32f2f;
+  font-size: 14px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #d32f2f;
+  background-color: #ffebee;
+}

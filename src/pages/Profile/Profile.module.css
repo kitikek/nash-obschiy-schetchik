@@ -1,0 +1,40 @@
+/* Profile.module.css */
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+.info {
+  border: 1px solid black;
+  padding: 16px;
+}
+
+.field {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.field:last-child {
+  border-bottom: none;
+}
+
+.field label {
+  font-weight: 500;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.header .title {
+  margin-bottom: 0;
+}
