@@ -4,7 +4,6 @@ const delay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, m
 
 export const getRecentExpenses = async (limit: number = 5) => {
   await delay();
-  // Берём последние расходы (по дате)
   const sorted = [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const recent = sorted.slice(0, limit).map(exp => {
     const group = groups.find(g => g.id === exp.groupId);
@@ -15,6 +14,7 @@ export const getRecentExpenses = async (limit: number = 5) => {
       date: exp.date,
       groupName: group?.name || '',
       groupId: exp.groupId,
+      currency: group?.currency || 'RUB',
     };
   });
   return recent;

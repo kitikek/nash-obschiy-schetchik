@@ -1,31 +1,52 @@
-import styles from "./ExpenseCard.module.css"
+import React from 'react';
+import { Link } from 'react-router-dom';
+import styles from './ExpenseCard.module.css';
+import { formatMoney } from '../../utils/formatMoney';
+import { getCurrencySymbol } from '../../utils/currency';
 
-interface Props {
-  title: string
-  amount: number
-  date: string
-  payer: string
-  share: number
+interface ExpenseCardProps {
+  id: number;
+  description: string;
+  amount: number;
+  date: string;
+  groupName?: string;
+  currency?: string;
+  participants?: { userId: number; name: string; debt: number; isPayer: boolean }[];
 }
 
-const ExpenseCard = ({ title, amount, date, payer, share }: Props) => {
+const ExpenseCard: React.FC<ExpenseCardProps> = ({
+  id,
+  description,
+  amount,
+  date,
+  groupName,
+  currency = 'RUB',
+  participants = [],
+}) => {
   return (
-    <div className={styles.card}>
-      <div className={styles.top}>
-        <strong>{title}</strong>
-        <span>{amount} ₽</span>
+    <Link to={`/expenses/${id}`} className={styles.card}>
+      <div className={styles.header}>
+        <strong>{description}</strong>
+        <span>{formatMoney(amount)} {getCurrencySymbol(currency)}</span>
       </div>
-
-      <div className={styles.details}>
+      <div className={styles.meta}>
+        {groupName && <span>{groupName}</span>}
         <span>{date}</span>
-        <span>Оплатил: {payer}</span>
       </div>
+      {participants.length > 0 && (
+        <div className={styles.participants}>
+          {participants.map(p => (
+            <div key={p.userId} className={styles.participant}>
+              <span>{p.name}</span>
+              <span className={p.isPayer ? styles.payer : ''}>
+                {p.isPayer ? '👑 ' : ''}{formatMoney(p.debt)} {getCurrencySymbol(currency)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Link>
+  );
+};
 
-      <div className={styles.share}>
-        Ваша доля: {share} ₽
-      </div>
-    </div>
-  )
-}
-
-export default ExpenseCard
+export default ExpenseCard;

@@ -1,0 +1,63 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.modal {
+  background-color: white;
+  width: 80%;
+  max-width: 300px;
+  padding: 20px;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.title {
+  font-size: 18px;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.message {
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirmButton,
+.cancelButton {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+}
+
+.confirmButton {
+  background-color: black;
+  color: white;
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: black;
+  border: 1px solid black;
+}
+
+.confirmButton:hover,
+.cancelButton:hover {
+  opacity: 0.8;
+}

@@ -96,3 +96,28 @@
 .pending {
   color: #ff9800;
 }
+
+.expenseCard:hover {
+  text-decoration: none;
+}
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.editButton, .deleteButton {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.editButton {
+  background-color: black;
+  color: white;
+  border: none;
+}
+.deleteButton {
+  background-color: transparent;
+  color: black;
+  border: 1px solid black;
+}

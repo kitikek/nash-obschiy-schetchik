@@ -11,6 +11,7 @@ export const authUsers = [
   { userId: 1, email: 'anna@example.com', password: '123456' },
   { userId: 2, email: 'ivan@example.com', password: '123456' },
   { userId: 3, email: 'maria@example.com', password: '123456' },
+  { userId: 3, email: 'katamelnik159@gmail.com', password: '123456' },
 ];
 
 // Пользователи (соответствуют интерфейсу User)
@@ -169,3 +170,12 @@ expenses.forEach(exp => {
 
 // Балансы (можно оставить пустыми для моков)
 export const balances: Balance[] = [];
+
+export const resetTokens: { token: string; email: string; expiresAt: Date }[] = [];
+
+expenses.forEach(exp => {
+  if (!exp.updatedAt) {
+    exp.updatedAt = exp.createdAt;
+    exp.updatedBy = exp.createdBy;
+  }
+});

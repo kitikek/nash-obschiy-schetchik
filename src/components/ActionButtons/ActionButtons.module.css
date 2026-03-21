@@ -1,0 +1,37 @@
+.container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.primaryButton,
+.secondaryButton {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.primaryButton {
+  background-color: black;
+  color: white;
+  border: none;
+}
+
+.secondaryButton {
+  background-color: transparent;
+  color: black;
+  border: 1px solid black;
+}
+
+.primaryButton:hover:not(:disabled),
+.secondaryButton:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -7,15 +7,16 @@ import type { ExpenseParticipant } from './expenseParticipant';
  * Таблица "Расход".
  */
 export interface Expense {
-  id: number;                // ID расхода (счетчик)
-  groupId: number;           // ID группы, к которой относится расход
-  description: string;       // Описание расхода (до 255 символов)
-  amount: number;            // Общая сумма (вещественное, точность до копеек)
-  date: string;              // Дата расхода (ISO)
-  createdBy: number;         // ID создателя расхода (пользователь)
-  createdAt: string;         // Время создания (ISO)
-  isDeleted: boolean;        // Метка удаления (логический)
-  // Может включать детальную информацию об участниках, если API её подгружает
+  id: number;
+  groupId: number;
+  description: string;
+  amount: number;
+  date: string;
+  createdBy: number;         // ID создателя
+  createdAt: string;         // ISO
+  updatedBy?: number;        // ID последнего редактора
+  updatedAt?: string;        // ISO
+  isDeleted: boolean;
   participants: ExpenseParticipant[];
 }
 
