@@ -19,6 +19,9 @@ const Navbar: React.FC = () => {
           Наш Общий Счетчик
         </Link>
         <div className={styles.links}>
+          <Link to="/balances" className={styles.link}>
+            Долги
+          </Link>
           <Link to="/profile" className={styles.link}>
             {user?.name || 'Профиль'}
           </Link>

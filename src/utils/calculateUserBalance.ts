@@ -1,6 +1,5 @@
 // src/utils/calculateUserBalance.ts
 import type { Group } from '../types/group';
-import type { Expense } from '../types/expense';
 
 export function calculateUserBalance(group: Group, userId: number): number {
   if (!group.expenses) return 0;

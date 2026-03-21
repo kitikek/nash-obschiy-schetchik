@@ -1,6 +1,5 @@
 /* src/index.css */
 
-/* Сбрасываем отступы и делаем box-sizing удобным */
 * {
   margin: 0;
   padding: 0;
@@ -13,27 +12,21 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
-  /* Чёрно-белая тема */
   background-color: #ffffff;
   color: #000000;
-  
-  /* Центрируем содержимое */
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
 }
 
-/* Контейнер для всего контента – мобильная ширина */
 #root {
   width: 100%;
-  max-width: 480px;  /* типичная ширина мобильного экрана */
+  max-width: 480px;
   margin: 0 auto;
-  background-color: white; /* на случай, если body фон пробивает */
+  background-color: white;
 }
 
-/* Стили для ссылок – чёрные, без подчёркивания (кроме ховера) */
 a {
   color: #000000;
   text-decoration: none;
@@ -42,12 +35,12 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Кнопки – чёрно-белые */
+/* Единые кнопки */
 button {
   background-color: #000000;
   color: #ffffff;
   border: none;
-  padding: 12px;
+  padding: 10px 16px;
   font-size: 16px;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -55,14 +48,22 @@ button {
 button:hover {
   opacity: 0.8;
 }
-/* Для вторичных кнопок можно сделать инверсные */
 button.secondary {
   background-color: transparent;
   color: #000000;
   border: 1px solid #000000;
 }
+button.small {
+  padding: 4px 8px;
+  font-size: 14px;
+}
+button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
-/* Поля ввода – чёрная обводка */
 input, textarea, select {
   border: 1px solid #000000;
   padding: 10px;
@@ -74,22 +75,4 @@ input, textarea, select {
 input:focus {
   outline: none;
   border-width: 2px;
-}
-button:disabled {
-  background-color: #cccccc;
-  color: #666666;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-button:disabled:hover {
-  opacity: 0.6;
-}
-button:disabled {
-  background-color: #cccccc;
-  color: #666666;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-button:disabled:hover {
-  opacity: 0.6;
 }

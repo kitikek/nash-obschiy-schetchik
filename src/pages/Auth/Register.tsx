@@ -9,6 +9,7 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -20,6 +21,10 @@ const Register: React.FC = () => {
       setError('Пароли не совпадают');
       return;
     }
+    if (!termsAccepted) {
+      setError('Необходимо принять условия использования');
+      return;
+    }
     try {
       const response = await register({ name, email, password });
       login(response.token, response.user, false);
@@ -28,6 +33,8 @@ const Register: React.FC = () => {
       setError(err.message || 'Ошибка регистрации');
     }
   };
+
+  const isFormValid = name && email && password && confirmPassword && termsAccepted && password === confirmPassword;
 
   return (
     <div className={styles.container}>
@@ -74,7 +81,22 @@ const Register: React.FC = () => {
             required
           />
         </div>
-        <button type="submit">Зарегистрироваться</button>
+
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+          />
+          Я принимаю{' '}
+          <Link to="/terms" target="_blank" className={styles.termsLink}>
+            условия использования
+          </Link>
+        </label>
+
+        <button type="submit" disabled={!isFormValid}>
+          Зарегистрироваться
+        </button>
       </form>
       <p className={styles.switch}>
         Уже есть аккаунт? <Link to="/login">Войти</Link>

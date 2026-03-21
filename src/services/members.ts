@@ -1,5 +1,5 @@
 // src/services/members.ts
-import { groupMembers, users, groups } from '../mocks/db';
+import { groupMembers, users } from '../mocks/db';
 
 const delay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -29,10 +29,12 @@ export const addMemberToGroup = async (groupId: string | number, email: string):
     joinedAt: new Date().toISOString(),
     isAdmin: false,
   });
+};
 
-  // Обновляем дату группы
-  const group = groups.find(g => g.id === groupIdNum);
-  if (group) {
-    group.updatedAt = new Date().toISOString().split('T')[0];
-  }
+export const removeMemberFromGroup = async (groupId: string | number, userId: number): Promise<void> => {
+  await delay();
+  const groupIdNum = typeof groupId === 'string' ? parseInt(groupId, 10) : groupId;
+  const memberIndex = groupMembers.findIndex(gm => gm.groupId === groupIdNum && gm.userId === userId);
+  if (memberIndex === -1) throw new Error('Участник не найден');
+  groupMembers.splice(memberIndex, 1);
 };

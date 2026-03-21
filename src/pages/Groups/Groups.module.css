@@ -19,7 +19,6 @@
   font-size: 16px;
   cursor: pointer;
 }
-
 .createButton:hover {
   opacity: 0.8;
 }
@@ -37,9 +36,9 @@
   text-decoration: none;
   color: black;
 }
-
 .groupCard:hover {
   background-color: #f5f5f5;
+  text-decoration: none !important;
 }
 
 .groupName {

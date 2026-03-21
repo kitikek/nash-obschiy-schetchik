@@ -49,6 +49,9 @@ const Login: React.FC = () => {
             required
           />
         </div>
+        <div className={styles.forgotLink}>
+          <Link to="/forgot-password">Забыли пароль?</Link>
+        </div>
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"

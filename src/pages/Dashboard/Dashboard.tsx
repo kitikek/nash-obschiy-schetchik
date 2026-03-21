@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import CreateGroupModal from '../../components/CreateGroupModal/CreateGroupModal';
 import GroupCard from '../../components/GroupCard/GroupCard';
+import ExpenseCard from '../../components/ExpenseCard/ExpenseCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { getRecentExpenses } from '../../services/recent';
 import { createGroup, getGroups } from '../../services/groups';
 import { calculateUserBalance } from '../../utils/calculateUserBalance';
-import styles from './Dashboard.module.css';
 import { formatMoney } from '../../utils/formatMoney';
+import { getCurrencySymbol } from '../../utils/currency';
+import styles from './Dashboard.module.css';
 import type { Group } from '../../types/group';
 
 const Dashboard: React.FC = () => {
@@ -33,7 +35,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     getRecentExpenses().then(data => {
       setRecentExpenses(data);
-      setFilteredRecent(data); // начальное значение
+      setFilteredRecent(data);
     });
 
     getGroups().then(allGroups => {
@@ -117,7 +119,7 @@ const Dashboard: React.FC = () => {
           )}
 
           <div className={styles.groupsList}>
-            {filteredGroups.slice(0, 3).map(group => (
+            {filteredGroups.slice(0, 4).map(group => (
               <GroupCard key={group.id} group={group} />
             ))}
           </div>
@@ -142,14 +144,15 @@ const Dashboard: React.FC = () => {
 
           <div className={styles.recentList}>
             {filteredRecent.slice(0, 4).map(exp => (
-              <Link to={`/expenses/${exp.id}`} key={exp.id} className={styles.recentCard}>
-                <div>
-                  <strong>{exp.description}</strong>
-                  <span className={styles.groupName}>{exp.groupName}</span>
-                  <span className={styles.expenseDate}>{exp.date}</span>
-                </div>
-                <span>{formatMoney(exp.amount)} ₽</span>
-              </Link>
+              <ExpenseCard
+                key={exp.id}
+                id={exp.id}
+                description={exp.description}
+                amount={exp.amount}
+                date={exp.date}
+                groupName={exp.groupName}
+                currency={exp.currency}
+              />
             ))}
           </div>
         </section>
