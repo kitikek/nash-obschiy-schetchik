@@ -12,8 +12,7 @@ interface Props {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    participants: Array<{ userId: number; shareAmount: number; isPayer: boolean }>;
   };
   members: Member[];
   onClose: () => void;
@@ -21,8 +20,7 @@ interface Props {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    participants: Array<{ userId: number; shareAmount: number; isPayer: boolean }>;
   }) => Promise<void>;
 }
 
@@ -30,34 +28,44 @@ const EditExpenseModal: React.FC<Props> = ({ expense, members, onClose, onUpdate
   const [description, setDescription] = useState(expense.description);
   const [amount, setAmount] = useState(expense.amount.toString());
   const [date, setDate] = useState(expense.date);
-  const [payerId, setPayerId] = useState<number>(expense.payerId);
-  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(expense.participantIds);
+  const [payerId, setPayerId] = useState<number>(expense.participants.find(p => p.isPayer)?.userId || 0);
+  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(expense.participants.map(p => p.userId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setSelectedParticipants(expense.participantIds);
+    setSelectedParticipants(expense.participants.map(p => p.userId));
+    setPayerId(expense.participants.find(p => p.isPayer)?.userId || 0);
   }, [expense]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!description || !amount || !payerId || selectedParticipants.length === 0) {
-      setError('Заполните все поля и выберите участников');
+    if (!description || !amount || !payerId || selectedParticipants.length < 2) {
+      setError('Заполните все поля и выберите минимум двух участников');
       return;
     }
     if (!selectedParticipants.includes(payerId)) {
       setError('Плательщик должен быть среди участников');
       return;
     }
+    const totalAmount = parseFloat(amount);
+    const cents = Math.round(totalAmount * 100);
+    const base = Math.floor(cents / selectedParticipants.length);
+    const remainder = cents - base * selectedParticipants.length;
+    const participants = selectedParticipants.map((userId, index) => ({
+      userId,
+      shareAmount: (base + (index === 0 ? remainder : 0)) / 100,
+      isPayer: userId === payerId,
+    }));
+
     setLoading(true);
     try {
       await onUpdate({
         description,
-        amount: parseFloat(amount),
+        amount: totalAmount,
         date,
-        payerId,
-        participantIds: selectedParticipants,
+        participants,
       });
       onClose();
     } catch (err: any) {

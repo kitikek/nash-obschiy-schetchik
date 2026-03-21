@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import AddExpenseModal from './AddExpenseModal';
 import AddMembersModal from '../../components/AddMembersModal/AddMembersModal';
 import EditGroupModal from './EditGroupModal';
 import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
-import { getExpensesByGroup, createExpense } from '../../services/expenses';
+import { getExpensesByGroup, createExpense, getGroupBalances } from '../../services/expenses';
 import { getGroupMembers, addMemberToGroup, removeMemberFromGroup } from '../../services/members';
 import { getGroupById, updateGroup, deleteGroup } from '../../services/groups';
-import { calculateBalances } from '../../utils/calculateBalances';
 import { formatMoney } from '../../utils/formatMoney';
 import { getCurrencySymbol } from '../../utils/currency';
 import type { Expense } from '../../types/expense';
@@ -57,16 +56,23 @@ const GroupDetail: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    const result = calculateBalances(expenses);
-    setTransfers(result);
-  }, [expenses]);
+    const loadBalances = async () => {
+      if (!id) return;
+      const data = await getGroupBalances(Number(id));
+      setTransfers(data.recommended_transfers.map(t => ({
+        creditorId: t.creditorId,
+        debtorId: t.debtorId,
+        amount: t.amount,
+      })));
+    };
+    loadBalances();
+  }, [expenses, id]);
 
   const handleAddExpense = async (expenseData: {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    participants: Array<{ userId: number; shareAmount: number; isPayer: boolean }>;
   }) => {
     if (!id) return;
     const newExpense = await createExpense(id, expenseData);
@@ -194,7 +200,7 @@ const GroupDetail: React.FC = () => {
               participants={exp.participants.map(p => ({
                 userId: p.userId,
                 name: getUserName(p.userId),
-                debt: p.debt,
+                debt: p.shareAmount,
                 isPayer: p.isPayer,
               }))}
             />

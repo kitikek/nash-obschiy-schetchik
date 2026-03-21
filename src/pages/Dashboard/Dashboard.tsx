@@ -8,8 +8,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getRecentExpenses } from '../../services/recent';
 import { createGroup, getGroups } from '../../services/groups';
 import { calculateUserBalance } from '../../utils/calculateUserBalance';
-import { formatMoney } from '../../utils/formatMoney';
-import { getCurrencySymbol } from '../../utils/currency';
 import styles from './Dashboard.module.css';
 import type { Group } from '../../types/group';
 

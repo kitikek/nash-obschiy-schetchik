@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import GoBackButton from '../../components/GoBackButton/GoBackButton';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExpenseById, requestPayment, confirmPayment, updateExpense, deleteExpense } from '../../services/expenses';
+import { getExpenseById, updateExpense, deleteExpense, getMyBalances, payGroupBalance } from '../../services/expenses';
 import { getGroupById } from '../../services/groups';
 import { getGroupMembers } from '../../services/members';
 import { formatMoney } from '../../utils/formatMoney';
@@ -24,6 +24,7 @@ const ExpenseDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [groupBalances, setGroupBalances] = useState<Array<{ balance_id: number; user_id: number; amount: number }>>([]);
 
   useEffect(() => {
     if (id && user) {
@@ -35,69 +36,35 @@ const ExpenseDetail: React.FC = () => {
           setGroupName(group?.name || '');
           const groupMembers = await getGroupMembers(exp.groupId.toString());
           setMembers(groupMembers);
+          const myBalances = await getMyBalances(exp.groupId, user.id);
+          setGroupBalances(myBalances.owe_to);
         }
         setLoading(false);
       });
     }
   }, [id, user]);
 
-  const handleRequestPayment = async (participantId: number) => {
-    try {
-      await requestPayment(participantId);
-      setExpense(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          participants: prev.participants.map(p =>
-            p.id === participantId ? { ...p, paymentRequested: true } : p
-          ),
-        };
-      });
-    } catch (error) {
-      console.error('Ошибка при запросе оплаты', error);
-    }
-  };
-
-  const handleConfirmPayment = async (participantId: number) => {
-    try {
-      await confirmPayment(participantId);
-      setExpense(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          participants: prev.participants.map(p =>
-            p.id === participantId ? { ...p, paid: true, paymentRequested: false } : p
-          ),
-        };
-      });
-    } catch (error) {
-      console.error('Ошибка при подтверждении оплаты', error);
-    }
-  };
-
   const handleUpdate = async (data: {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    participants: Array<{ userId: number; shareAmount: number; isPayer: boolean }>;
   }) => {
     if (!expense) return;
     const updated = await updateExpense(expense.id, {
       description: data.description,
       amount: data.amount,
       date: data.date,
-      participants: data.participantIds.map((userId, idx) => ({
-        id: 0,
-        expenseId: expense.id,
-        userId,
-        debt: data.amount / data.participantIds.length,
-        isPayer: userId === data.payerId,
-        paid: expense.participants.find(p => p.userId === userId)?.paid || false,
-        paymentRequested: expense.participants.find(p => p.userId === userId)?.paymentRequested || false,
-      })),
+      participants: data.participants,
     }, user!.id);
     setExpense({ ...updated, currency: expense.currency });
+  };
+
+  const handlePayBalance = async (balanceId: number, amount: number) => {
+    if (!expense) return;
+    await payGroupBalance(expense.groupId, balanceId, amount);
+    const myBalances = await getMyBalances(expense.groupId, user!.id);
+    setGroupBalances(myBalances.owe_to);
   };
 
   const handleDelete = () => {
@@ -115,7 +82,6 @@ const ExpenseDetail: React.FC = () => {
   if (!expense || !user) return <div className={styles.container}>Расход не найден</div>;
 
   const payer = expense.participants.find(p => p.isPayer);
-  const isCurrentUserPayer = payer?.userId === user!.id;
   const payerName = members.find(m => m.id === payer?.userId)?.name || 'Неизвестно';
   const currencySymbol = getCurrencySymbol(expense.currency);
 
@@ -178,50 +144,35 @@ const ExpenseDetail: React.FC = () => {
             const member = members.find(m => m.id === p.userId);
             const name = member?.name || `Пользователь ${p.userId}`;
             const isPayer = p.isPayer;
-            const isCurrent = p.userId === user!.id;
-
-            if (!isCurrentUserPayer && !isCurrent) return null;
 
             return (
               <div key={p.id} className={styles.participantRow}>
                 <div>
                   <span>{name} {isPayer && '👑'}</span>
-                  <span className={styles.debt}>Доля: {formatMoney(p.debt)} {currencySymbol}</span>
-                </div>
-                <div className={styles.status}>
-                  {isPayer ? (
-                    <span className={styles.paid}>Оплатил (организатор)</span>
-                  ) : isCurrentUserPayer ? (
-                    p.paymentRequested ? (
-                      <button
-                        className={styles.confirmButton}
-                        onClick={() => handleConfirmPayment(p.id)}
-                      >
-                        Подтвердить оплату
-                      </button>
-                    ) : p.paid ? (
-                      <span className={styles.paid}>✅ Оплачено</span>
-                    ) : (
-                      <span className={styles.unpaid}>⏳ Ожидание</span>
-                    )
-                  ) : isCurrent ? (
-                    p.paid ? (
-                      <span className={styles.paid}>✅ Оплачено</span>
-                    ) : p.paymentRequested ? (
-                      <span className={styles.pending}>⏳ Ожидает подтверждения</span>
-                    ) : (
-                      <button
-                        className={styles.requestButton}
-                        onClick={() => handleRequestPayment(p.id)}
-                      >
-                        Я оплатил
-                      </button>
-                    )
-                  ) : null}
+                  <span className={styles.debt}>Доля: {formatMoney(p.shareAmount)} {currencySymbol}</span>
                 </div>
               </div>
             );
           })}
+        </div>
+
+        <h3 className={styles.subtitle}>Погашение ваших долгов по группе</h3>
+        <div className={styles.participants}>
+          {groupBalances.length === 0 ? (
+            <p className={styles.paid}>У вас нет непогашенных долгов по этой группе</p>
+          ) : (
+            groupBalances.map(b => {
+              const creditorName = members.find(m => m.id === b.user_id)?.name || `Пользователь ${b.user_id}`;
+              return (
+                <div key={b.balance_id} className={styles.participantRow}>
+                  <span>Вы должны: {creditorName}</span>
+                  <button className={styles.confirmButton} onClick={() => handlePayBalance(b.balance_id, b.amount)}>
+                    Оплатить {formatMoney(b.amount)} {currencySymbol}
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -232,8 +183,7 @@ const ExpenseDetail: React.FC = () => {
             description: expense.description,
             amount: expense.amount,
             date: expense.date,
-            payerId: expense.participants.find(p => p.isPayer)?.userId || 0,
-            participantIds: expense.participants.map(p => p.userId),
+            participants: expense.participants.map(p => ({ userId: p.userId, shareAmount: p.shareAmount, isPayer: p.isPayer })),
           }}
           members={members}
           onClose={() => setIsEditModalOpen(false)}

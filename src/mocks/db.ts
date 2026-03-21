@@ -135,32 +135,32 @@ export const expenses: Expense[] = [
   },
 ];
 
-// Участники расходов (ExpenseParticipant) с добавленным полем paid
+// Участники расходов (ExpenseParticipant)
 export const expenseParticipants: ExpenseParticipant[] = [
   // Для expense 1
-  { id: 1, expenseId: 1, userId: 1, debt: 1000, isPayer: true, paid: true, paymentRequested: false },
-  { id: 2, expenseId: 1, userId: 2, debt: 1000, isPayer: false, paid: false, paymentRequested: false },
-  { id: 3, expenseId: 1, userId: 3, debt: 1000, isPayer: false, paid: false, paymentRequested: false },
+  { id: 1, expenseId: 1, userId: 1, shareAmount: 1000, isPayer: true },
+  { id: 2, expenseId: 1, userId: 2, shareAmount: 1000, isPayer: false },
+  { id: 3, expenseId: 1, userId: 3, shareAmount: 1000, isPayer: false },
   // Для expense 2
-  { id: 4, expenseId: 2, userId: 2, debt: 666.67, isPayer: true, paid: true, paymentRequested: false },
-  { id: 5, expenseId: 2, userId: 1, debt: 666.67, isPayer: false, paid: false, paymentRequested: false },
-  { id: 6, expenseId: 2, userId: 3, debt: 666.67, isPayer: false, paid: false, paymentRequested: false },
+  { id: 4, expenseId: 2, userId: 2, shareAmount: 666.67, isPayer: true },
+  { id: 5, expenseId: 2, userId: 1, shareAmount: 666.67, isPayer: false },
+  { id: 6, expenseId: 2, userId: 3, shareAmount: 666.67, isPayer: false },
   // Для expense 3
-  { id: 7, expenseId: 3, userId: 2, debt: 1500, isPayer: true, paid: true, paymentRequested: false },
-  { id: 8, expenseId: 3, userId: 1, debt: 1500, isPayer: false, paid: false, paymentRequested: false },
-  { id: 9, expenseId: 3, userId: 3, debt: 1500, isPayer: false, paid: false, paymentRequested: false },
+  { id: 7, expenseId: 3, userId: 2, shareAmount: 1500, isPayer: true },
+  { id: 8, expenseId: 3, userId: 1, shareAmount: 1500, isPayer: false },
+  { id: 9, expenseId: 3, userId: 3, shareAmount: 1500, isPayer: false },
   // Для expense 4
-  { id: 10, expenseId: 4, userId: 1, debt: 500, isPayer: true, paid: true, paymentRequested: false },
-  { id: 11, expenseId: 4, userId: 2, debt: 500, isPayer: false, paid: false, paymentRequested: false },
-  { id: 12, expenseId: 4, userId: 3, debt: 500, isPayer: false, paid: false, paymentRequested: false },
+  { id: 10, expenseId: 4, userId: 1, shareAmount: 500, isPayer: true },
+  { id: 11, expenseId: 4, userId: 2, shareAmount: 500, isPayer: false },
+  { id: 12, expenseId: 4, userId: 3, shareAmount: 500, isPayer: false },
   // Для expense 5
-  { id: 13, expenseId: 5, userId: 3, debt: 1000, isPayer: true, paid: true, paymentRequested: false },
-  { id: 14, expenseId: 5, userId: 1, debt: 1000, isPayer: false, paid: false, paymentRequested: false },
-  { id: 15, expenseId: 5, userId: 2, debt: 1000, isPayer: false, paid: false, paymentRequested: false },
+  { id: 13, expenseId: 5, userId: 3, shareAmount: 1000, isPayer: true },
+  { id: 14, expenseId: 5, userId: 1, shareAmount: 1000, isPayer: false },
+  { id: 15, expenseId: 5, userId: 2, shareAmount: 1000, isPayer: false },
   // Для expense 6
-  { id: 16, expenseId: 6, userId: 3, debt: 266.67, isPayer: true, paid: true, paymentRequested: false },
-  { id: 17, expenseId: 6, userId: 1, debt: 266.67, isPayer: false, paid: false, paymentRequested: false },
-  { id: 18, expenseId: 6, userId: 2, debt: 266.67, isPayer: false, paid: false, paymentRequested: false },
+  { id: 16, expenseId: 6, userId: 3, shareAmount: 266.67, isPayer: true },
+  { id: 17, expenseId: 6, userId: 1, shareAmount: 266.67, isPayer: false },
+  { id: 18, expenseId: 6, userId: 2, shareAmount: 266.67, isPayer: false },
 ];
 
 // Связываем расходы с их участниками

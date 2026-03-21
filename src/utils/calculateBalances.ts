@@ -9,18 +9,15 @@ export const calculateBalances = (expenses: Expense[]): Transfer[] => {
 
     if (!participants.length) return
 
-    const share = Math.round((expense.amount / participants.length) * 100) / 100
-
     participants.forEach(p => {
-      balances[p.userId] = (balances[p.userId] || 0) - share
+      balances[p.userId] = (balances[p.userId] || 0) - p.shareAmount
     })
 
-    const payer = participants.find(p => p.isPayer)
-
-    if (payer) {
-      balances[payer.userId] =
-        (balances[payer.userId] || 0) + expense.amount
-    }
+    participants
+      .filter(p => p.isPayer)
+      .forEach(payer => {
+        balances[payer.userId] = (balances[payer.userId] || 0) + expense.amount
+      })
   })
 
   const creditors: { userId: number; amount: number }[] = []
@@ -29,8 +26,8 @@ export const calculateBalances = (expenses: Expense[]): Transfer[] => {
   Object.entries(balances).forEach(([userId, balance]) => {
     const id = Number(userId)
 
-    if (balance > 0) creditors.push({ userId: id, amount: balance })
-    if (balance < 0) debtors.push({ userId: id, amount: -balance })
+    if (balance > 0.01) creditors.push({ userId: id, amount: balance })
+    if (balance < -0.01) debtors.push({ userId: id, amount: -balance })
   })
 
   const transfers: Transfer[] = []
@@ -39,7 +36,7 @@ export const calculateBalances = (expenses: Expense[]): Transfer[] => {
     const creditor = creditors[0]
     const debtor = debtors[0]
 
-    const amount = Math.min(creditor.amount, debtor.amount)
+    const amount = Math.round(Math.min(creditor.amount, debtor.amount) * 100) / 100
 
     transfers.push({
       creditorId: creditor.userId,
@@ -47,11 +44,11 @@ export const calculateBalances = (expenses: Expense[]): Transfer[] => {
       amount
     })
 
-    creditor.amount -= amount
-    debtor.amount -= amount
+    creditor.amount = Math.round((creditor.amount - amount) * 100) / 100
+    debtor.amount = Math.round((debtor.amount - amount) * 100) / 100
 
-    if (creditor.amount === 0) creditors.shift()
-    if (debtor.amount === 0) debtors.shift()
+    if (creditor.amount < 0.01) creditors.shift()
+    if (debtor.amount < 0.01) debtors.shift()
   }
 
   return transfers

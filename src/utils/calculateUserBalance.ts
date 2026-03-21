@@ -10,9 +10,9 @@ export function calculateUserBalance(group: Group, userId: number): number {
     // Если участник платил, ему должны (сумма расхода - его доля) 
     // Или он должен другим, если не платил (его доля)
     if (participant.isPayer) {
-      balance += exp.amount - participant.debt; // ему должны
+      balance += exp.amount - participant.shareAmount; // ему должны
     } else {
-      balance -= participant.debt; // он должен
+      balance -= participant.shareAmount; // он должен
     }
   });
   return balance;

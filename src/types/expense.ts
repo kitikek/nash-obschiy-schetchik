@@ -27,9 +27,8 @@ export interface CreateExpenseData {
   groupId: number;
   description: string;
   amount: number;
-  date: string;              // или Date, но на практике строка
-  payerId: number;           // ID плательщика
-  participantIds: number[];  // Список ID участников расхода (включая плательщика)
+  date: string;
+  participants: ExpenseParticipantData[];
 }
 
 /**
@@ -39,7 +38,12 @@ export interface UpdateExpenseData {
   description?: string;
   amount?: number;
   date?: string;
-  payerId?: number;
-  participantIds?: number[];
+  participants?: ExpenseParticipantData[];
   isDeleted?: boolean;
+}
+
+interface ExpenseParticipantData {
+  userId: number;
+  shareAmount: number;
+  isPayer: boolean;
 }

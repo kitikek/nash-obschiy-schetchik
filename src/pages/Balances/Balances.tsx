@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import GoBackButton from '../../components/GoBackButton/GoBackButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { getGroups } from '../../services/groups';
-import { getExpensesByGroup } from '../../services/expenses';
-import { calculateBalances } from '../../utils/calculateBalances';
+import { getMyBalances } from '../../services/expenses';
 import { getCurrencySymbol } from '../../utils/currency';
 import { formatMoney } from '../../utils/formatMoney';
-import type { Transfer } from '../../types/transfer';
 import styles from './Balances.module.css';
 
 const Balances: React.FC = () => {
@@ -26,26 +23,24 @@ const Balances: React.FC = () => {
       const creditsList: typeof credits = [];
 
       for (const group of groups) {
-        const expenses = await getExpensesByGroup(group.id);
-        const transfers = calculateBalances(expenses);
-        transfers.forEach((t: Transfer) => {
-          if (t.debtorId === user.id) {
-            const creditor = group.participants?.find(p => p.id === t.creditorId);
-            debtsList.push({
-              to: creditor?.name || `Пользователь ${t.creditorId}`,
-              amount: t.amount,
-              currency: group.currency,
-              groupName: group.name,
-            });
-          } else if (t.creditorId === user.id) {
-            const debtor = group.participants?.find(p => p.id === t.debtorId);
-            creditsList.push({
-              from: debtor?.name || `Пользователь ${t.debtorId}`,
-              amount: t.amount,
-              currency: group.currency,
-              groupName: group.name,
-            });
-          }
+        const my = await getMyBalances(group.id, user.id);
+        my.owe_to.forEach((item: { user_id: number; amount: number }) => {
+          const creditor = group.participants?.find(p => p.id === item.user_id);
+          debtsList.push({
+            to: creditor?.name || `Пользователь ${item.user_id}`,
+            amount: item.amount,
+            currency: group.currency,
+            groupName: group.name,
+          });
+        });
+        my.owed_by.forEach((item: { user_id: number; amount: number }) => {
+          const debtor = group.participants?.find(p => p.id === item.user_id);
+          creditsList.push({
+            from: debtor?.name || `Пользователь ${item.user_id}`,
+            amount: item.amount,
+            currency: group.currency,
+            groupName: group.name,
+          });
         });
       }
       setDebts(debtsList);

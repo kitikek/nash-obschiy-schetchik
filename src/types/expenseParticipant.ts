@@ -8,10 +8,8 @@ export interface ExpenseParticipant {
   id: number;
   expenseId: number;
   userId: number;
-  debt: number;
+  shareAmount: number;
   isPayer: boolean;
-  paid: boolean;             // Подтверждено плательщиком
-  paymentRequested: boolean;  // Должник запросил подтверждение
 }
 
 /**
@@ -19,6 +17,6 @@ export interface ExpenseParticipant {
  */
 export interface ExpenseParticipantData {
   userId: number;
-  debt?: number;             // Если нужно явно указать долг (при неравномерном распределении)
+  shareAmount: number;
   isPayer: boolean;
 }

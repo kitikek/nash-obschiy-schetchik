@@ -14,8 +14,7 @@ interface Props {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    participants: Array<{ userId: number; shareAmount: number; isPayer: boolean }>;
   }) => void;
 }
 // const AddExpenseModal: React.FC<Props> = ({ groupId, members, onClose, onAdd }) => {
@@ -39,8 +38,8 @@ const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
         return;
     }
 
-    if (selectedParticipants.length === 0) {
-        setParticipantsError('Выберите хотя бы одного участника');
+    if (selectedParticipants.length < 2) {
+        setParticipantsError('Выберите минимум двух участников');
         return;
     }
 
@@ -49,12 +48,21 @@ const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
         return;
     }
 
+    const totalAmount = parseFloat(amount);
+    const cents = Math.round(totalAmount * 100);
+    const base = Math.floor(cents / selectedParticipants.length);
+    const remainder = cents - base * selectedParticipants.length;
+    const participants = selectedParticipants.map((userId, index) => ({
+      userId,
+      shareAmount: (base + (index === 0 ? remainder : 0)) / 100,
+      isPayer: userId === payerId,
+    }));
+
     onAdd({
       description,
-      amount: parseFloat(amount),
+      amount: totalAmount,
       date,
-      payerId,
-      participantIds: selectedParticipants,
+      participants,
     });
 
     onClose();
