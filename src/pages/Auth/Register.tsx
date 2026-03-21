@@ -34,7 +34,14 @@ const Register: React.FC = () => {
     }
   };
 
-  const isFormValid = name && email && password && confirmPassword && termsAccepted && password === confirmPassword;
+  const validationErrors: string[] = [];
+  if (!name.trim()) validationErrors.push('Введите имя');
+  if (!email.trim()) validationErrors.push('Введите email');
+  if (!password) validationErrors.push('Введите пароль');
+  if (!confirmPassword) validationErrors.push('Подтвердите пароль');
+  if (password && confirmPassword && password !== confirmPassword) validationErrors.push('Пароли не совпадают');
+  if (!termsAccepted) validationErrors.push('Примите условия использования');
+  const isFormValid = validationErrors.length === 0;
 
   return (
     <div className={styles.container}>
@@ -97,6 +104,11 @@ const Register: React.FC = () => {
         <button type="submit" disabled={!isFormValid}>
           Зарегистрироваться
         </button>
+        {!isFormValid && (
+          <div className={styles.hint}>
+            Нельзя зарегистрироваться: {validationErrors[0]}
+          </div>
+        )}
       </form>
       <p className={styles.switch}>
         Уже есть аккаунт? <Link to="/login">Войти</Link>

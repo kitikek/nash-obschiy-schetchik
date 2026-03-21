@@ -72,3 +72,9 @@
 .termsContent ul {
   margin: 10px 0 10px 20px;
 }
+
+.hint {
+  color: #666;
+  font-size: 13px;
+  margin-top: -8px;
+}

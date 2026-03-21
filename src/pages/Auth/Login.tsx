@@ -24,6 +24,11 @@ const Login: React.FC = () => {
     }
   };
 
+  const loginErrors: string[] = [];
+  if (!email.trim()) loginErrors.push('Введите email');
+  if (!password) loginErrors.push('Введите пароль');
+  const isLoginValid = loginErrors.length === 0;
+
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Вход</h2>
@@ -60,9 +65,14 @@ const Login: React.FC = () => {
           />
           Запомнить меня
         </label>
-        <button type="submit" disabled={!email || !password}>
+        <button type="submit" disabled={!isLoginValid}>
           Войти
         </button>
+        {!isLoginValid && (
+          <div className={styles.hint}>
+            Нельзя войти: {loginErrors[0]}
+          </div>
+        )}
       </form>
       <p className={styles.switch}>
         Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
