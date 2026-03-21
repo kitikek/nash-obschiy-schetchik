@@ -15,22 +15,22 @@
 | неверно | Выход из системы | `POST /auth/logout` | UI делает только локальный `logout()` в `src/contexts/AuthContext.tsx` (очистка storage) и редиректит на `/login`. HTTP-эндпоинт не вызывается. |
 | неверно | Профиль (данные + stats) | `GET /users/me` 🔒 | Страница `src/pages/Profile/Profile.tsx` вычисляет stats локально через `getUserGroupsCount()` и `getUserTotalExpenses()` из `src/services/user.ts` (моки). Нет реального запроса `GET /users/me`. |
 | отсутствует | Обновление профиля | `PUT /users/me` 🔒 | Нет UI/логики для `username` и `phone` обновления. |
-| отсутствует | Смена пароля | `PATCH /users/me/password` 🔒 | Нет UI/логики смены пароля и вызова соответствующего backend-контракта. |
+| неверно | Смена пароля | `PATCH /users/me/password` 🔒 | Добавлен flow “Забыли пароль?” (`/forgot-password`, `/reset-password`) через токен и `EmailJS` в `src/services/auth.ts`, но это не аутентифицированная смена текущего пароля по контракту `PATCH /users/me/password`. |
 | неверно | Список групп “с моим балансом” | `GET /groups` 🔒 | В `src/pages/Groups/GroupsList.tsx` вызывается `getGroups()` (мок) из `src/services/groups.ts`. Поле “мой баланс” рассчитывается на клиенте (`calculateUserBalance()` в `src/utils/calculateUserBalance.ts`), а не приходит как `my_balance` в ответе. |
 | неверно | Создание группы | `POST /groups` 🔒 | В `src/pages/Groups/GroupsList.tsx`/`src/components/CreateGroupModal/CreateGroupModal.tsx` создаётся группа через `createGroup()` (мок). В спеках есть `member_ids[]`, но UI добавляет только создателя как участника (и не спрашивает `member_ids[]`). |
 | сделан фронт | Детали группы | `GET /groups/:id` 🔒 | `src/pages/GroupDetail/GroupDetail.tsx` агрегирует данные из нескольких мок-функций (`getGroupMembers`, `getExpensesByGroup`, `getGroupById`) и показывает: название, участников, расходы и “кому сколько должны”. Это похоже на “group detail”, но контракт ответа не соответствует спекам (нет точного формата `{group, members[], stats}`/`my_balance`). |
-| отсутствует | Обновление группы | `PUT /groups/:id` 🔒 | Нет UI/логики под редактирование группы (name/description/currency) и нет вызовов соответствующих мок/HTTP. |
-| отсутствует | Удаление группы | `DELETE /groups/:id` 🔒 | Удаление групп (включая запрет при долгах) не реализовано. |
+| неверно | Обновление группы | `PUT /groups/:id` 🔒 | В `src/pages/GroupDetail/GroupDetail.tsx` есть `EditGroupModal` и вызов `updateGroup()` из `src/services/groups.ts` (name/description/currency). Это локальный мок без серверного контракта/проверок прав. |
+| неверно | Удаление группы | `DELETE /groups/:id` 🔒 | В `GroupDetail` есть подтверждение удаления и вызов `deleteGroup()`; в сервисе группа деактивируется (`status=false`) и расходы помечаются `isDeleted=true`. Нет backend-валидаций (например, запрета при непогашенных долгах). |
 | неверно | Список участников группы | `GET /groups/:id/members` 🔒 | `src/pages/GroupDetail/GroupDetail.tsx` вызывает `getGroupMembers()` (мок), но возвращает упрощённые данные `{id, name}`; нет явного соответствия “member” из спеки и нет `is_admin` в UI. |
 | неверно | Добавление участника | `POST /groups/:id/members` 🔒 | `src/pages/GroupDetail/GroupDetail.tsx` → `src/components/AddMembersModal/AddMembersModal.tsx` → `addMemberToGroup(groupId, email)` (мок). В спеках тело — `{user_id}`, а здесь добавление по `email` (и нет серверной проверки прав `is_admin`). |
-| отсутствует | Удаление участника | `DELETE /groups/:id/members/:uid` 🔒 | В UI нет сценария удаления участников из группы. |
+| неверно | Удаление участника | `DELETE /groups/:id/members/:uid` 🔒 | В `GroupDetail` реализовано удаление участника через `removeMemberFromGroup(groupId, userId)` с подтверждением, но без полного серверного контракта и ограничений из спеки (права/долги/создатель). |
 | неверно | Расходы группы (список) | `GET /groups/:id/expenses` 🔒 | `src/pages/GroupDetail/GroupDetail.tsx` вызывает `getExpensesByGroup(id)` и показывает все расходы без `page/limit/from_date/to_date`. |
 | неверно | Создание расхода | `POST /groups/:id/expenses` 🔒 | `src/pages/GroupDetail/GroupDetail.tsx` → `src/pages/GroupDetail/AddExpenseModal.tsx` → `createExpense()`. В спеках нужны `participants[]` с `share_amount` и `is_payer`; в UI задаются `payerId` и `participantIds`, а доли вычисляются клиентом как равномерное деление на число участников (без правил остатка “к первому”). |
 | сделан фронт | Детали расхода | `GET /groups/:id/expenses/:eid` 🔒 | UI открывает `/expenses/:id` и через `getExpenseById(eid)` показывает расход и участников. Путь отличается от спеки (нет вложенного `/groups/:id/...`), и формат ответа не совпадает 1:1 с `{expense, participants[]}`. |
-| отсутствует | Редактирование расхода | `PUT /groups/:id/expenses/:eid` 🔒 | Нет UI/мок-логики обновления расхода. |
-| отсутствует | Удаление расхода (soft delete) | `DELETE /groups/:id/expenses/:eid` 🔒 | Soft delete (`is_deleted`) и пересчёт балансов после удаления не реализованы. |
+| неверно | Редактирование расхода | `PUT /groups/:id/expenses/:eid` 🔒 | В `src/pages/ExpenseDetail/ExpenseDetail.tsx` добавлены `EditExpenseModal` и `updateExpense()`, но работа идет через локальный путь `/expenses/:id` и упрощенную модель участников/долей. |
+| неверно | Удаление расхода (soft delete) | `DELETE /groups/:id/expenses/:eid` 🔒 | В `ExpenseDetail` есть удаление с подтверждением и `deleteExpense()` (ставит `isDeleted=true`), но без backend-контракта `groups/:id/...` и без серверного транзакционного пересчета балансов. |
 | неверно | Балансы группы + recommended transfers | `GET /groups/:id/balances` 🔒 | `src/pages/GroupDetail/GroupDetail.tsx` вызывает `calculateBalances(expenses)` и показывает только список “кому и сколько должны” (пересчёт на клиенте). Нет таблицы `balances[]` и нет `recommended_transfers[]` в точном формате из спеки. |
-| отсутствует | Мои долги/должен | `GET /groups/:id/balances/me` 🔒 | Нет страницы/логики для “owe_to[] / owed_by[]” по текущему пользователю. |
+| неверно | Мои долги/должен | `GET /groups/:id/balances/me` 🔒 | Добавлена страница `src/pages/Balances/Balances.tsx`, но данные считаются на клиенте из `getGroups()` + `getExpensesByGroup()` + `calculateBalances()`, а не приходят как endpoint `GET /groups/:id/balances/me` с контрактом `owe_to[] / owed_by[]`. |
 | отсутствует | Оплата по балансу | `POST /groups/:id/balances/:bid/pay` 🔒 | В UI есть подтверждение оплаты по участникам расхода, но это не соответствует спеке с оплатой по `balanceId` (`:bid`). |
 
 ## Локальная (не из спеки) функциональность, которая есть на фронте
@@ -44,7 +44,7 @@
 ## Что сейчас отсутствует как бизнес-правила/контроль (не endpoint’ы)
 
 - `SUM(participants.share_amount) MUST == total_amount` и правила округления/остатка — сейчас это “почти совпадает” только в рамках равного деления; явной проверки контракта share_amount как в спеках нет (`src/pages/GroupDetail/AddExpenseModal.tsx`, `src/services/expenses.ts`, `src/utils/calculateBalances.ts`).
-- Контроль прав (`is_admin`, запреты на удаление участника/группы при наличии долгов) — в UI отсутствует: нет ни ролей, ни серверной валидации (`src/mocks/db.ts` содержит `isAdmin`, но UI не применяет ограничения).
+- Контроль прав (`is_admin`, запреты на удаление участника/группы при наличии долгов) — частично отображается в UI (например, удаление участника доступно только создателю группы в `GroupDetail`), но полноценной серверной валидации и всех продуктовых ограничений из спеки нет.
 - Доступ по членству в группе и возврат `403/404` — нет: роуты в `src/App.tsx` просто требуют “аутентифицированности”, но не проверяют членство в конкретной группе.
 
 ## Сравнение логики (существенные различия)
