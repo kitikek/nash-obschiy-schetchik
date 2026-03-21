@@ -153,8 +153,12 @@ UNIQUE (group_id, creditor_id, debtor_id)
 | PUT | `/groups/:id` 🔒 | `{name?, description?, currency?}` | `200 {group}` |
 | DELETE | `/groups/:id` 🔒 | — | `200 {}` |
 | GET | `/groups/:id/members` 🔒 | — | `200 [{member}]` |
-| POST | `/groups/:id/members` 🔒 | `{user_id}` | `201 {member}` |
+| POST | `/groups/:id/members` 🔒 | `{email}` | `201 {member}` |
 | DELETE | `/groups/:id/members/:uid` 🔒 | — | `200 {}` |
+
+Примечание: `user_id` — внутренний идентификатор пользователя в системе.
+Во внешнем API для добавления участника используется поиск по email (`POST /groups/:id/members` с body `{email}`).
+После резолва email backend сам находит `user_id` и использует его во внутренних операциях/связях.
 
 ### Expenses
 
