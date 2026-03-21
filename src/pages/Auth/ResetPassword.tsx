@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../../services/auth';
 import styles from './Auth.module.css';
 
 const ResetPassword: React.FC = () => {
-  const [token, setToken] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tokenParam = params.get('token');
-    if (tokenParam) {
-      setToken(tokenParam);
-    } else {
+    if (!token) {
       setError('Некорректная ссылка для сброса пароля');
     }
-  }, [location]);
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
