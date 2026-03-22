@@ -28,7 +28,10 @@ function App() {
         <Route path="/groups/:id" element={isAuthenticated ? <GroupDetail /> : <Navigate to="/login" />} />
         <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
         <Route path="/expenses" element={isAuthenticated ? <Expenses /> : <Navigate to="/login" />} />
-        <Route path="/expenses/:id" element={isAuthenticated ? <ExpenseDetail /> : <Navigate to="/login" />} />
+        <Route
+          path="/groups/:groupId/expenses/:expenseId"
+          element={isAuthenticated ? <ExpenseDetail /> : <Navigate to="/login" />}
+        />
         <Route path="/balances" element={isAuthenticated ? <Balances /> : <Navigate to="/login" />} />
         <Route path="/terms" element={<Terms />} />
       </Routes>

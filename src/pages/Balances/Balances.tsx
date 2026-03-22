@@ -1,62 +1,61 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import Navbar from '../../components/Navbar/Navbar';
-import GoBackButton from '../../components/GoBackButton/GoBackButton';
-import { useAuth } from '../../contexts/AuthContext';
-import { getGroups } from '../../services/groups';
-import { getExpensesByGroup } from '../../services/expenses';
-import { calculateBalances } from '../../utils/calculateBalances';
-import { getCurrencySymbol } from '../../utils/currency';
-import { formatMoney } from '../../utils/formatMoney';
-import type { Transfer } from '../../types/transfer';
-import styles from './Balances.module.css';
+import React, { useEffect, useState } from 'react'
+import Navbar from '../../components/Navbar/Navbar'
+import GoBackButton from '../../components/GoBackButton/GoBackButton'
+import { useAuth } from '../../contexts/AuthContext'
+import { getGroups } from '../../services/groups'
+import { getGroupBalancesMe } from '../../services/balances'
+import { getGroupMembers } from '../../services/members'
+import { getCurrencySymbol } from '../../utils/currency'
+import { formatMoney } from '../../utils/formatMoney'
+import styles from './Balances.module.css'
 
 const Balances: React.FC = () => {
-  const { user } = useAuth();
-  const [debts, setDebts] = useState<Array<{ to: string; amount: number; currency: string; groupName: string }>>([]);
-  const [credits, setCredits] = useState<Array<{ from: string; amount: number; currency: string; groupName: string }>>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth()
+  const [debts, setDebts] = useState<Array<{ to: string; amount: number; currency: string; groupName: string }>>([])
+  const [credits, setCredits] = useState<Array<{ from: string; amount: number; currency: string; groupName: string }>>(
+    []
+  )
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) return
 
     const fetchBalances = async () => {
-      const groups = await getGroups();
-      const debtsList: typeof debts = [];
-      const creditsList: typeof credits = [];
+      const groups = await getGroups()
+      const debtsList: typeof debts = []
+      const creditsList: typeof credits = []
 
       for (const group of groups) {
-        const expenses = await getExpensesByGroup(group.id);
-        const transfers = calculateBalances(expenses);
-        transfers.forEach((t: Transfer) => {
-          if (t.debtorId === user.id) {
-            const creditor = group.participants?.find(p => p.id === t.creditorId);
-            debtsList.push({
-              to: creditor?.name || `Пользователь ${t.creditorId}`,
-              amount: t.amount,
-              currency: group.currency,
-              groupName: group.name,
-            });
-          } else if (t.creditorId === user.id) {
-            const debtor = group.participants?.find(p => p.id === t.debtorId);
-            creditsList.push({
-              from: debtor?.name || `Пользователь ${t.debtorId}`,
-              amount: t.amount,
-              currency: group.currency,
-              groupName: group.name,
-            });
-          }
-        });
+        const members = await getGroupMembers(group.id)
+        const nameById = (id: number) => members.find((m) => m.id === id)?.name ?? `Пользователь ${id}`
+
+        const me = await getGroupBalancesMe(group.id)
+        me.oweTo.forEach((row) => {
+          debtsList.push({
+            to: nameById(row.userId),
+            amount: row.amount,
+            currency: group.currency,
+            groupName: group.name,
+          })
+        })
+        me.owedBy.forEach((row) => {
+          creditsList.push({
+            from: nameById(row.userId),
+            amount: row.amount,
+            currency: group.currency,
+            groupName: group.name,
+          })
+        })
       }
-      setDebts(debtsList);
-      setCredits(creditsList);
-      setLoading(false);
-    };
+      setDebts(debtsList)
+      setCredits(creditsList)
+      setLoading(false)
+    }
 
-    fetchBalances();
-  }, [user]);
+    fetchBalances()
+  }, [user])
 
-  if (loading) return <div className={styles.container}>Загрузка...</div>;
+  if (loading) return <div className={styles.container}>Загрузка...</div>
 
   return (
     <>
@@ -106,7 +105,7 @@ const Balances: React.FC = () => {
         </section>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default Balances;
+export default Balances

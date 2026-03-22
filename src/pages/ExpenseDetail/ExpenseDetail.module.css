@@ -36,6 +36,13 @@
   margin-bottom: 12px;
 }
 
+.hint {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
 .participants {
   border: 1px solid #ccc;
   padding: 8px;

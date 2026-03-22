@@ -46,6 +46,10 @@ const EditExpenseModal: React.FC<Props> = ({ expense, members, onClose, onUpdate
       setError('Заполните все поля и выберите участников');
       return;
     }
+    if (selectedParticipants.length < 2) {
+      setError('Минимум 2 участника расхода');
+      return;
+    }
     if (!selectedParticipants.includes(payerId)) {
       setError('Плательщик должен быть среди участников');
       return;

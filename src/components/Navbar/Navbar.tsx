@@ -7,10 +7,10 @@ const Navbar: React.FC = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   return (
     <nav className={styles.navbar}>

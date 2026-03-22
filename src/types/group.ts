@@ -7,8 +7,6 @@ import type { User } from './user';
  * Таблица "Группы".
  */
 export interface Group {
-  [x: string]: any // group.ts
-  ;
   id: number;                // ID группы (счетчик)
   name: string;              // Название группы (до 100 символов)
   description?: string;      // Описание (до 500 символов)
