@@ -29,12 +29,37 @@
 .item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  align-items: center;
+  padding: 12px 0;
   border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.itemActions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
 }
 
 .amount {
   font-weight: 500;
+  font-size: 16px;
+}
+
+.payButton {
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+.payButton:hover {
+  opacity: 0.8;
 }
 
 .empty {

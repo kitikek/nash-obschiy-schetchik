@@ -44,9 +44,13 @@ export interface FoundUser {
 
 export const findUserByEmail = async (email: string): Promise<FoundUser | null> => {
   try {
-    const { data } = await api.post<FoundUser>("/users/find", { email })
-    return data
-  } catch (e) {
+    const { data } = await api.post<{ id?: unknown; username?: string }>("/users/find", {
+      email: email.trim(),
+    })
+    const id = data?.id != null ? String(data.id) : ""
+    if (!id) return null
+    return { id, username: String(data.username ?? "") }
+  } catch {
     return null
   }
 }

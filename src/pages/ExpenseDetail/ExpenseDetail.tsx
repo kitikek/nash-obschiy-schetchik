@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getExpenseById, updateExpense, deleteExpense } from '../../services/expenses'
 import { getGroupById } from '../../services/groups'
 import { getGroupMembers } from '../../services/members'
+import { getGroupBalances, payBalance } from '../../services/balances'
 import { formatMoney } from '../../utils/formatMoney'
 import { getCurrencySymbol } from '../../utils/currency'
 import type { Expense } from '../../types/expense'
@@ -14,6 +15,7 @@ import EditExpenseModal from './EditExpenseModal'
 import ConfirmModal from '../../components/ConfirmModal/ConfirmModal'
 import ActionButtons from '../../components/ActionButtons/ActionButtons'
 import { ApiError } from '../../services/api'
+import { normUserId } from '../../utils/userId'
 
 const ExpenseDetail: React.FC = () => {
   const { groupId: groupIdParam, expenseId: expenseIdParam } = useParams()
@@ -25,6 +27,12 @@ const ExpenseDetail: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [balanceInfo, setBalanceInfo] = useState<{
+    exists: boolean
+    remaining: number
+    creditorId: string
+    debtorId: string
+  } | null>(null)
 
   const groupId = groupIdParam ?? ''
   const expenseId = expenseIdParam ?? ''
@@ -39,8 +47,25 @@ const ExpenseDetail: React.FC = () => {
         setExpense(exp)
         const group = await getGroupById(groupId)
         setGroupName(group?.name || '')
-        const groupMembers = await getGroupMembers(groupId.toString())
+        const groupMembers = await getGroupMembers(groupId)
         setMembers(groupMembers.map((m) => ({ id: m.id, name: m.name })))
+
+        getGroupBalances(groupId).then(({ balances }) => {
+          const payer = exp.participants.find(p => p.isPayer)
+          if (payer && user) {
+            const found = balances.find(b => b.debtorId === user.id && b.creditorId === payer.userId)
+            if (found && found.amount - found.paidAmount > 0.01) {
+              setBalanceInfo({
+                exists: true,
+                remaining: found.amount - found.paidAmount,
+                creditorId: found.creditorId,
+                debtorId: found.debtorId,
+              })
+            } else {
+              setBalanceInfo(null)
+            }
+          }
+        })
       }
       setLoading(false)
     })
@@ -73,6 +98,19 @@ const ExpenseDetail: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!expense || !groupId) return
+    // Предварительная проверка долгов
+    try {
+      const { recommended_transfers } = await getGroupBalances(groupId)
+      const active = recommended_transfers.filter(t => t.amount > 0.01)
+      if (active.length > 0) {
+        const confirm = window.confirm(
+          'В группе есть непогашенные долги. Удаление этого расхода пересчитает все долги. Вы уверены?'
+        )
+        if (!confirm) return
+      }
+    } catch (e) {
+      console.warn('Не удалось проверить наличие долгов', e)
+    }
     try {
       await deleteExpense(groupId, expense.id)
       navigate(`/groups/${groupId}`)
@@ -82,6 +120,17 @@ const ExpenseDetail: React.FC = () => {
         return
       }
       throw e
+    }
+  }
+
+  const handlePay = async () => {
+    if (!balanceInfo || !groupId) return
+    try {
+      await payBalance(groupId, balanceInfo.creditorId, balanceInfo.debtorId, balanceInfo.remaining)
+      navigate(`/groups/${groupId}`)
+    } catch (err: any) {
+      console.error('Pay error:', err)
+      alert(err?.message || 'Ошибка при оплате')
     }
   }
 
@@ -151,7 +200,6 @@ const ExpenseDetail: React.FC = () => {
         </div>
 
         <h3 className={styles.subtitle}>Участники и доли</h3>
-        <p className={styles.hint}>Статусы «оплачено» между участниками ведётся через балансы группы на сервере.</p>
         <div className={styles.participants}>
           {expense.participants.map((p) => {
             const member = members.find((m) => m.id === p.userId)
@@ -171,6 +219,14 @@ const ExpenseDetail: React.FC = () => {
             )
           })}
         </div>
+
+        {balanceInfo && (
+          <div className={styles.paySection}>
+            <button className={styles.payButton} onClick={handlePay}>
+              Оплатить долг ({formatMoney(balanceInfo.remaining)} {currencySymbol})
+            </button>
+          </div>
+        )}
       </div>
 
       {isEditModalOpen && expense && (
@@ -180,8 +236,10 @@ const ExpenseDetail: React.FC = () => {
             description: expense.description,
             amount: expense.amount,
             date: expense.date,
-            payerId: expense.participants.find((p) => p.isPayer)?.userId || 0,
-            participantIds: expense.participants.map((p) => p.userId),
+            payerId:
+              normUserId(expense.participants.find((p) => p.isPayer)?.userId) ||
+              normUserId(expense.participants[0]?.userId),
+            participantIds: expense.participants.map((p) => normUserId(p.userId)).filter(Boolean),
           }}
           members={members}
           onClose={() => setIsEditModalOpen(false)}

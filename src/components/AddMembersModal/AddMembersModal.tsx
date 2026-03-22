@@ -4,7 +4,8 @@ import { findUserByEmail } from '../../services/user'
 
 interface Props {
   onClose: () => void
-  onAdd: (userId: string) => Promise<void>
+  /** Добавление по email (POST /groups/:id/members с телом { email }) */
+  onAdd: (email: string) => Promise<void>
 }
 
 const AddMembersModal: React.FC<Props> = ({ onClose, onAdd }) => {
@@ -37,14 +38,19 @@ const AddMembersModal: React.FC<Props> = ({ onClose, onAdd }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const trimmed = email.trim()
+    if (!trimmed.includes('@')) {
+      setSearchError('Введите email')
+      return
+    }
     if (!foundUser) {
-      setSearchError('Сначала найдите пользователя')
+      setSearchError('Сначала нажмите «Найти», чтобы проверить пользователя')
       return
     }
     setSearchError('')
     setLoading(true)
     try {
-      await onAdd(foundUser.id)
+      await onAdd(trimmed)
       onClose()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Ошибка добавления'
@@ -59,8 +65,7 @@ const AddMembersModal: React.FC<Props> = ({ onClose, onAdd }) => {
       <div className={styles.modal}>
         <h2 className={styles.title}>Добавить участника</h2>
         <p className={styles.hint}>
-          Введите email пользователя и нажмите "Найти". Добавлять участников может только
-          администратор группы.
+          Введите email, нажмите «Найти», затем «Добавить». На сервер уходит поле <strong>email</strong> (см. API).
         </p>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.searchRow}>
@@ -68,7 +73,11 @@ const AddMembersModal: React.FC<Props> = ({ onClose, onAdd }) => {
               type="email"
               placeholder="email@example.com"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setFoundUser(null); setSearchError('') }}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setFoundUser(null)
+                setSearchError('')
+              }}
               disabled={loading}
             />
             <button type="button" onClick={handleSearch} disabled={loading || !email.trim()}>
@@ -78,13 +87,13 @@ const AddMembersModal: React.FC<Props> = ({ onClose, onAdd }) => {
           {foundUser && (
             <div className={styles.foundUser}>
               <span className={styles.userName}>{foundUser.name}</span>
-              <span className={styles.userEmail}>{email}</span>
+              <span className={styles.userEmail}>{email.trim()}</span>
             </div>
           )}
           {searchError && <div className={styles.error}>{searchError}</div>}
           <div className={styles.buttons}>
             <button type="submit" disabled={loading || !foundUser}>
-              {loading ? 'Добавление...' : 'Добавить'}
+              {loading ? 'Добавление...' : 'Добавить в группу'}
             </button>
             <button type="button" onClick={onClose} className={styles.cancel} disabled={loading}>
               Отмена

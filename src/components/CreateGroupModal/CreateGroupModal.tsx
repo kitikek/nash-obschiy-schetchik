@@ -60,7 +60,12 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onCreate }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onCreate({ name, description, currency, participantIds: participants.map(p => p.id) });
+    onCreate({
+      name,
+      description,
+      currency,
+      participantIds: participants.map((p) => String(p.id).trim()).filter(Boolean),
+    });
     onClose();
   };
 

@@ -7,6 +7,8 @@ import ExpenseCard from '../../components/ExpenseCard/ExpenseCard'
 import { useAuth } from '../../contexts/AuthContext'
 import { getRecentExpenses } from '../../services/recent'
 import { createGroup, getGroups } from '../../services/groups'
+import { getExpensesByGroup } from '../../services/expenses'
+import { getGroupBalancesMe } from '../../services/balances'
 import styles from './Dashboard.module.css'
 import type { Group } from '../../types/group'
 
@@ -17,20 +19,10 @@ const Dashboard: React.FC = () => {
   const [search, setSearch] = useState('')
   const [groups, setGroups] = useState<Group[]>([])
   const [filteredGroups, setFilteredGroups] = useState<Group[]>([])
-  const [recentExpenses, setRecentExpenses] = useState<
-    Array<{
-      id: string
-      description: string
-      amount: number
-      date: string
-      groupName: string
-      groupId: string
-      currency: string
-    }>
-  >([])
+  const [recentExpenses, setRecentExpenses] = useState<any[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [expenseSearch, setExpenseSearch] = useState('')
-  const [filteredRecent, setFilteredRecent] = useState<typeof recentExpenses>([])
+  const [filteredRecent, setFilteredRecent] = useState<any[]>([])
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -45,12 +37,22 @@ const Dashboard: React.FC = () => {
       setFilteredRecent(data)
     })
 
-    getGroups().then((allGroups) => {
-      const mappedGroups: Group[] = allGroups.map((g) => ({
-        ...g,
-        updatedAt: g.updatedAt || g.createdAt,
-      }))
-      setGroups(mappedGroups)
+    getGroups().then(async (allGroups) => {
+      const groupsWithData = await Promise.all(
+        allGroups.map(async (group) => {
+          try {
+            const { total } = await getExpensesByGroup(group.id, { page: 1, limit: 1 })
+            const { oweTo, owedBy } = await getGroupBalancesMe(group.id)
+            const totalOwe = oweTo.reduce((sum, row) => sum + row.amount, 0)
+            const totalOwed = owedBy.reduce((sum, row) => sum + row.amount, 0)
+            const balance = totalOwed - totalOwe
+            return { ...group, expensesCount: total, userBalance: balance }
+          } catch {
+            return { ...group, expensesCount: 0, userBalance: 0 }
+          }
+        })
+      )
+      setGroups(groupsWithData)
     })
   }, [user])
 
@@ -64,11 +66,17 @@ const Dashboard: React.FC = () => {
     )
   }, [expenseSearch, recentExpenses])
 
-  const handleCreateGroup = async (groupData: { name: string; description?: string; currency: string }) => {
+  const handleCreateGroup = async (groupData: {
+    name: string
+    description?: string
+    currency: string
+    participantIds?: string[]
+  }) => {
     const newGroup = await createGroup({
       name: groupData.name,
       description: groupData.description,
       currency: groupData.currency,
+      participantIds: groupData.participantIds,
     })
     setGroups((prev) => [
       ...prev,
@@ -76,7 +84,7 @@ const Dashboard: React.FC = () => {
         ...newGroup,
         participants: user ? [user] : [],
         expensesCount: 0,
-        userBalance: newGroup.userBalance ?? 0,
+        userBalance: 0,
         updatedAt: newGroup.createdAt,
       },
     ])
@@ -85,7 +93,6 @@ const Dashboard: React.FC = () => {
   return (
     <>
       <Navbar />
-
       <div className={styles.container}>
         <h2 className={styles.greeting}>
           {greeting}, {user?.name || 'гость'}!

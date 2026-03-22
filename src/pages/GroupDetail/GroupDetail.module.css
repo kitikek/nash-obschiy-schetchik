@@ -9,6 +9,15 @@
   margin-bottom: 16px;
 }
 
+.groupDescription {
+  margin-bottom: 16px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #666;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
 .actionButtons {
   display: flex;
   gap: 8px;
@@ -62,6 +71,12 @@
   padding: 0 4px;
 }
 .removeMemberButton:hover {
+  color: #d32f2f;
+}
+.hasDebtHint {
+  margin-left: 8px;
+  font-size: 14px;
+  cursor: help;
   color: #d32f2f;
 }
 .noMembersMessage {

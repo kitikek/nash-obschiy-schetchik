@@ -1,18 +1,18 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import styles from './ExpenseCard.module.css';
-import { formatMoney } from '../../utils/formatMoney';
-import { getCurrencySymbol } from '../../utils/currency';
+import React from 'react'
+import { Link } from 'react-router-dom'
+import styles from './ExpenseCard.module.css'
+import { formatMoney } from '../../utils/formatMoney'
+import { getCurrencySymbol } from '../../utils/currency'
 
 interface ExpenseCardProps {
-  id: string;
-  groupId: string;
-  description: string;
-  amount: number;
-  date: string;
-  groupName?: string;
-  currency?: string;
-  participants?: { userId: string; name: string; debt: number; isPayer: boolean }[];
+  id: string
+  groupId: string
+  description: string
+  amount: number
+  date: string
+  groupName?: string
+  currency?: string
+  participants?: { userId: string; name: string; debt: number; isPayer: boolean }[]
 }
 
 const ExpenseCard: React.FC<ExpenseCardProps> = ({
@@ -48,7 +48,7 @@ const ExpenseCard: React.FC<ExpenseCardProps> = ({
         </div>
       )}
     </Link>
-  );
-};
+  )
+}
 
-export default ExpenseCard;
+export default ExpenseCard

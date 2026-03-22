@@ -4,6 +4,8 @@ import GroupCard from '../../components/GroupCard/GroupCard'
 import CreateGroupModal from '../../components/CreateGroupModal/CreateGroupModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { getGroups, createGroup } from '../../services/groups'
+import { getExpensesByGroup } from '../../services/expenses'
+import { getGroupBalancesMe } from '../../services/balances'
 import GoBackButton from '../../components/GoBackButton/GoBackButton'
 import styles from './Groups.module.css'
 import type { Group } from '../../types/group'
@@ -14,12 +16,22 @@ const GroupsList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
-    getGroups().then((allGroups) => {
-      const mappedGroups = allGroups.map((g) => ({
-        ...g,
-        updatedAt: g.updatedAt || g.createdAt,
-      }))
-      setGroups(mappedGroups)
+    getGroups().then(async (allGroups) => {
+      const groupsWithData = await Promise.all(
+        allGroups.map(async (group) => {
+          try {
+            const { total } = await getExpensesByGroup(group.id, { page: 1, limit: 1 })
+            const { oweTo, owedBy } = await getGroupBalancesMe(group.id)
+            const totalOwe = oweTo.reduce((sum, row) => sum + row.amount, 0)
+            const totalOwed = owedBy.reduce((sum, row) => sum + row.amount, 0)
+            const balance = totalOwed - totalOwe
+            return { ...group, expensesCount: total, userBalance: balance }
+          } catch {
+            return { ...group, expensesCount: 0, userBalance: 0 }
+          }
+        })
+      )
+      setGroups(groupsWithData)
     })
   }, [user])
 
@@ -36,7 +48,7 @@ const GroupsList: React.FC = () => {
         ...newGroup,
         participants: user ? [user] : [],
         expensesCount: 0,
-        userBalance: newGroup.userBalance ?? 0,
+        userBalance: 0,
         updatedAt: newGroup.createdAt,
       },
     ])

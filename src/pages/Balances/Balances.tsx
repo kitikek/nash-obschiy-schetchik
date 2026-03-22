@@ -3,18 +3,36 @@ import Navbar from '../../components/Navbar/Navbar'
 import GoBackButton from '../../components/GoBackButton/GoBackButton'
 import { useAuth } from '../../contexts/AuthContext'
 import { getGroups } from '../../services/groups'
-import { getGroupBalancesMe } from '../../services/balances'
+import { getGroupBalancesMe, payBalance } from '../../services/balances'
 import { getGroupMembers } from '../../services/members'
 import { getCurrencySymbol } from '../../utils/currency'
 import { formatMoney } from '../../utils/formatMoney'
 import styles from './Balances.module.css'
 
+interface Debt {
+  to: string
+  amount: number
+  currency: string
+  groupName: string
+  groupId: string
+  debtorId: string
+  creditorId: string
+}
+
+interface Credit {
+  from: string
+  amount: number
+  currency: string
+  groupName: string
+  groupId: string
+  debtorId: string
+  creditorId: string
+}
+
 const Balances: React.FC = () => {
   const { user } = useAuth()
-  const [debts, setDebts] = useState<Array<{ to: string; amount: number; currency: string; groupName: string }>>([])
-  const [credits, setCredits] = useState<Array<{ from: string; amount: number; currency: string; groupName: string }>>(
-    []
-  )
+  const [debts, setDebts] = useState<Debt[]>([])
+  const [credits, setCredits] = useState<Credit[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,31 +40,50 @@ const Balances: React.FC = () => {
 
     const fetchBalances = async () => {
       const groups = await getGroups()
-      const debtsList: typeof debts = []
-      const creditsList: typeof credits = []
+      const debtsList: Debt[] = []
+      const creditsList: Credit[] = []
 
       for (const group of groups) {
-        const members = await getGroupMembers(group.id)
-        const nameById = (id: string) => members.find((m) => m.id === id)?.name ?? `Пользователь ${id}`
+        let members: { id: string; name: string }[] = []
+        try {
+          members = await getGroupMembers(group.id)
+        } catch (error) {
+          console.error(`Не удалось загрузить участников группы ${group.id}`, error)
+        }
+
+        const getName = (id: string | number) => {
+          const userId = String(id)
+          const member = members.find(m => String(m.id) === userId)
+          return member?.name ?? `Пользователь ${userId}`
+        }
 
         const me = await getGroupBalancesMe(group.id)
+
         me.oweTo.forEach((row) => {
           debtsList.push({
-            to: nameById(row.userId),
+            to: getName(row.userId),
             amount: row.amount,
             currency: group.currency,
             groupName: group.name,
+            groupId: group.id,
+            debtorId: user.id,
+            creditorId: row.userId,
           })
         })
+
         me.owedBy.forEach((row) => {
           creditsList.push({
-            from: nameById(row.userId),
+            from: getName(row.userId),
             amount: row.amount,
             currency: group.currency,
             groupName: group.name,
+            groupId: group.id,
+            debtorId: row.userId,
+            creditorId: user.id,
           })
         })
       }
+
       setDebts(debtsList)
       setCredits(creditsList)
       setLoading(false)
@@ -54,6 +91,16 @@ const Balances: React.FC = () => {
 
     fetchBalances()
   }, [user])
+
+  const handlePay = async (groupId: string, creditorId: string, debtorId: string, amount: number) => {
+    try {
+      await payBalance(groupId, creditorId, debtorId, amount)
+      window.location.reload()
+    } catch (err) {
+      console.error(err)
+      alert('Ошибка при оплате')
+    }
+  }
 
   if (loading) return <div className={styles.container}>Загрузка...</div>
 
@@ -75,9 +122,17 @@ const Balances: React.FC = () => {
                   <span>
                     {d.to} в группе «{d.groupName}»
                   </span>
-                  <span className={styles.amount}>
-                    {formatMoney(d.amount)} {getCurrencySymbol(d.currency)}
-                  </span>
+                  <div className={styles.itemActions}>
+                    <span className={styles.amount}>
+                      {formatMoney(d.amount)} {getCurrencySymbol(d.currency)}
+                    </span>
+                    <button
+                      className={styles.payButton}
+                      onClick={() => handlePay(d.groupId, d.creditorId, d.debtorId, d.amount)}
+                    >
+                      Оплатить
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -95,9 +150,11 @@ const Balances: React.FC = () => {
                   <span>
                     {c.from} в группе «{c.groupName}»
                   </span>
-                  <span className={styles.amount}>
-                    {formatMoney(c.amount)} {getCurrencySymbol(c.currency)}
-                  </span>
+                  <div className={styles.itemActions}>
+                    <span className={styles.amount}>
+                      {formatMoney(c.amount)} {getCurrencySymbol(c.currency)}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>

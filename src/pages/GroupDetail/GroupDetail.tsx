@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../../components/Navbar/Navbar'
 import AddExpenseModal from './AddExpenseModal'
 import AddMembersModal from '../../components/AddMembersModal/AddMembersModal'
@@ -23,6 +23,7 @@ import styles from './GroupDetail.module.css'
 const GroupDetail: React.FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const [members, setMembers] = useState<GroupMemberView[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -41,6 +42,7 @@ const GroupDetail: React.FC = () => {
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
+  const [memberHasDebt, setMemberHasDebt] = useState<Record<string, boolean>>({})
 
   const gid = id ?? ''
 
@@ -60,38 +62,51 @@ const GroupDetail: React.FC = () => {
     setExpenses(items)
   }, [gid])
 
-  useEffect(() => {
-    if (!id || !gid) return
+  const loadData = useCallback(async () => {
+    if (!gid) return
     setLoading(true)
     setListError('')
-    Promise.all([
-      getGroupMembers(id),
-      getExpensesByGroup(id, { page: 1, limit: 200 }),
-      getGroupById(gid),
-      getGroupBalances(gid).catch(() => ({ recommended_transfers: [] as Transfer[] })),
-    ])
-      .then(([membersData, expensesRes, groupData, bal]) => {
-        setMembers(membersData)
-        setExpenses(expensesRes.items)
-        setTransfers(bal.recommended_transfers ?? [])
-        setGroup(
-          groupData
-            ? {
-                id: groupData.id,
-                name: groupData.name,
-                description: groupData.description,
-                currency: groupData.currency,
-                authorId: groupData.authorId,
-              }
-            : null
-        )
-        setLoading(false)
+    try {
+      const [membersData, expensesRes, groupData, bal] = await Promise.all([
+        getGroupMembers(gid),
+        getExpensesByGroup(gid, { page: 1, limit: 200 }),
+        getGroupById(gid),
+        getGroupBalances(gid).catch(() => ({ recommended_transfers: [] as Transfer[] })),
+      ])
+      setMembers(membersData)
+      setExpenses(expensesRes.items)
+      setTransfers(bal.recommended_transfers ?? [])
+      setGroup(
+        groupData
+          ? {
+              id: groupData.id,
+              name: groupData.name,
+              description: groupData.description,
+              currency: groupData.currency,
+              authorId: groupData.authorId,
+            }
+          : null
+      )
+      // Загружаем долги для кнопок удаления
+      const { balances } = await getGroupBalances(gid)
+      const debtMap: Record<string, boolean> = {}
+      balances.forEach((b) => {
+        if (b.amount - b.paidAmount > 0.01) {
+          debtMap[b.debtorId] = true
+          debtMap[b.creditorId] = true
+        }
       })
-      .catch(() => {
-        setLoading(false)
-        setListError('Не удалось загрузить группу')
-      })
-  }, [id, gid])
+      setMemberHasDebt(debtMap)
+    } catch (err) {
+      setListError('Не удалось загрузить группу')
+    } finally {
+      setLoading(false)
+    }
+  }, [gid])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData, location.key])
 
   const handleAddExpense = async (expenseData: {
     description: string
@@ -106,12 +121,11 @@ const GroupDetail: React.FC = () => {
     await reloadBalances()
   }
 
-  const handleAddMember = async (userId: string) => {
+  const handleAddMember = async (email: string) => {
     if (!id) return
     try {
-      await addMemberToGroup(id, userId)
-      const updatedMembers = await getGroupMembers(id)
-      setMembers(updatedMembers)
+      await addMemberToGroup(id, email)
+      await loadData()
     } catch (e) {
       if (e instanceof ApiError) {
         if (e.status === 403) throw new Error('Нет прав добавлять участников')
@@ -123,12 +137,15 @@ const GroupDetail: React.FC = () => {
 
   const handleRemoveMember = async (userId: string) => {
     if (!id) return
+    if (memberHasDebt[userId]) {
+      alert('Нельзя удалить участника: у него есть непогашенные долги')
+      setMemberToRemove(null)
+      return
+    }
     try {
       await removeMemberFromGroup(id, userId)
-      const updatedMembers = await getGroupMembers(id)
-      setMembers(updatedMembers)
+      await loadData()
       setMemberToRemove(null)
-      await reloadBalances()
     } catch (e) {
       if (e instanceof ApiError) {
         if (e.status === 403) {
@@ -163,6 +180,18 @@ const GroupDetail: React.FC = () => {
   const handleDeleteGroup = async () => {
     if (!id) return
     try {
+      const { recommended_transfers } = await getGroupBalances(id)
+      const active = recommended_transfers.filter(t => t.amount > 0.01)
+      if (active.length > 0) {
+        const confirm = window.confirm(
+          'В группе есть непогашенные долги. Удаление группы приведёт к потере всех данных о долгах. Вы уверены?'
+        )
+        if (!confirm) return
+      }
+    } catch (e) {
+      console.warn('Не удалось проверить наличие долгов', e)
+    }
+    try {
       await deleteGroup(id)
       navigate('/groups')
     } catch (e) {
@@ -175,15 +204,22 @@ const GroupDetail: React.FC = () => {
   }
 
   const getUserName = (userId: string) => {
-    return members.find((m) => m.id === userId)?.name || `Пользователь ${userId}`
+    return members.find((m) => String(m.id) === String(userId))?.name || `Пользователь ${userId}`
   }
 
   const hasMembers = members.length > 0
-  const canManageMembers = Boolean(user && members.some((m) => m.id === user.id && m.isAdmin))
+  const uid = user?.id != null ? String(user.id) : ''
+  const isGroupCreator = Boolean(group && uid && String(group.authorId) === uid)
+  const isAdminInMembers = Boolean(
+    user && members.some((m) => String(m.id) === uid && m.isAdmin)
+  )
+  const canManageMembers = isGroupCreator || isAdminInMembers
 
   if (loading) return <div className={styles.container}>Загрузка...</div>
   if (listError) return <div className={styles.container}>{listError}</div>
   if (!group) return <div className={styles.container}>Группа не найдена или нет доступа</div>
+
+  const activeTransfers = transfers.filter(t => t.amount > 0.01)
 
   return (
     <>
@@ -193,6 +229,10 @@ const GroupDetail: React.FC = () => {
         <div className={styles.headerRow}>
           <h2 className={styles.title}>Расходы группы {group.name}</h2>
         </div>
+
+        {group.description && (
+          <p className={styles.groupDescription}>{group.description}</p>
+        )}
 
         <ActionButtons
           primaryLabel="✏️ Редактировать группу"
@@ -209,17 +249,28 @@ const GroupDetail: React.FC = () => {
                 <div key={member.id} className={styles.memberItem}>
                   <span>
                     {member.name}
-                    {member.id === group.authorId && <span className={styles.creatorBadge}> (создатель)</span>}
+                    {String(member.id) === String(group.authorId) && (
+                      <span className={styles.creatorBadge}> (создатель)</span>
+                    )}
                   </span>
-                  {canManageMembers && member.id !== user?.id && member.id !== group.authorId && (
-                    <button
-                      className={styles.removeMemberButton}
-                      onClick={() => setMemberToRemove(member)}
-                      aria-label="Удалить участника"
-                    >
-                      ✕
-                    </button>
-                  )}
+                  {canManageMembers &&
+                    String(member.id) !== uid &&
+                    String(member.id) !== String(group.authorId) &&
+                    !memberHasDebt[member.id] && (
+                      <button
+                        className={styles.removeMemberButton}
+                        onClick={() => setMemberToRemove(member)}
+                        aria-label="Удалить участника"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  {canManageMembers &&
+                    String(member.id) !== uid &&
+                    String(member.id) !== String(group.authorId) &&
+                    memberHasDebt[member.id] && (
+                      <span className={styles.hasDebtHint} title="У участника есть непогашенные долги">⚠️</span>
+                    )}
                 </div>
               ))}
             </div>
@@ -265,8 +316,8 @@ const GroupDetail: React.FC = () => {
 
         <h3 className={styles.balancesTitle}>Кому и сколько должны</h3>
         <div className={styles.transfersList}>
-          {transfers.length === 0 && <p className={styles.noBalances}>Все расчёты урегулированы</p>}
-          {transfers.map((t, idx) => (
+          {activeTransfers.length === 0 && <p className={styles.noBalances}>Все расчёты урегулированы</p>}
+          {activeTransfers.map((t, idx) => (
             <div key={idx} className={styles.transferItem}>
               <span>
                 {getUserName(t.debtorId)} → {getUserName(t.creditorId)}
