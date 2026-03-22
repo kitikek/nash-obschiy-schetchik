@@ -5,14 +5,14 @@ import { formatMoney } from '../../utils/formatMoney';
 import { getCurrencySymbol } from '../../utils/currency';
 
 interface ExpenseCardProps {
-  id: number;
-  groupId: number;
+  id: string;
+  groupId: string;
   description: string;
   amount: number;
   date: string;
   groupName?: string;
   currency?: string;
-  participants?: { userId: number; name: string; debt: number; isPayer: boolean }[];
+  participants?: { userId: string; name: string; debt: number; isPayer: boolean }[];
 }
 
 const ExpenseCard: React.FC<ExpenseCardProps> = ({

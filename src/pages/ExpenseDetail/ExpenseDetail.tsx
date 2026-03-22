@@ -21,16 +21,16 @@ const ExpenseDetail: React.FC = () => {
   const navigate = useNavigate()
   const [expense, setExpense] = useState<(Expense & { currency: string }) | null>(null)
   const [groupName, setGroupName] = useState('')
-  const [members, setMembers] = useState<{ id: number; name: string }[]>([])
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  const groupId = groupIdParam ? parseInt(groupIdParam, 10) : NaN
-  const expenseId = expenseIdParam ? parseInt(expenseIdParam, 10) : NaN
+  const groupId = groupIdParam ?? ''
+  const expenseId = expenseIdParam ?? ''
 
   useEffect(() => {
-    if (!user || !Number.isFinite(groupId) || !Number.isFinite(expenseId)) {
+    if (!user || !groupId || !expenseId) {
       setLoading(false)
       return
     }
@@ -50,10 +50,10 @@ const ExpenseDetail: React.FC = () => {
     description: string
     amount: number
     date: string
-    payerId: number
-    participantIds: number[]
+    payerId: string
+    participantIds: string[]
   }) => {
-    if (!expense || !Number.isFinite(groupId)) return
+    if (!expense || !groupId) return
     try {
       const updated = await updateExpense(groupId, expense.id, data)
       setExpense(updated)
@@ -72,7 +72,7 @@ const ExpenseDetail: React.FC = () => {
   }
 
   const confirmDelete = async () => {
-    if (!expense || !Number.isFinite(groupId)) return
+    if (!expense || !groupId) return
     try {
       await deleteExpense(groupId, expense.id)
       navigate(`/groups/${groupId}`)

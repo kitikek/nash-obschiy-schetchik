@@ -3,8 +3,8 @@
  */
 export function splitTotalEqually(
   total: number,
-  userIds: number[]
-): { user_id: number; share_amount: number }[] {
+  userIds: string[]
+): { user_id: string; share_amount: number }[] {
   if (userIds.length === 0) return []
   const cents = Math.round(total * 100)
   const n = userIds.length

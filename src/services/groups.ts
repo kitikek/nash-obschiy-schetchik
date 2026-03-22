@@ -14,7 +14,7 @@ interface GroupDetailResponse {
 }
 
 interface MemberRowDto {
-  user_id: number
+  user_id: string
   username: string
   email?: string
   is_admin?: boolean
@@ -35,7 +35,7 @@ export const getGroups = async (): Promise<Group[]> => {
   })
 }
 
-export const getGroupById = async (id: number): Promise<Group | undefined> => {
+export const getGroupById = async (id: string): Promise<Group | undefined> => {
   try {
     const { data } = await api.get<GroupDetailResponse>(`/groups/${id}`)
     const participants = data.members.map((m) => ({
@@ -66,7 +66,7 @@ export const createGroup = async (data: CreateGroupData): Promise<Group> => {
 }
 
 export const updateGroup = async (
-  groupId: number,
+  groupId: string,
   data: UpdateGroupData
 ): Promise<Group | undefined> => {
   const body: Record<string, unknown> = {}
@@ -77,6 +77,6 @@ export const updateGroup = async (
   return mapGroupDto(res.group)
 }
 
-export const deleteGroup = async (groupId: number): Promise<void> => {
+export const deleteGroup = async (groupId: string): Promise<void> => {
   await api.delete(`/groups/${groupId}`)
 }

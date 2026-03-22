@@ -2,12 +2,12 @@ import { getGroups } from "./groups"
 import { getExpensesByGroup } from "./expenses"
 
 export interface RecentExpenseItem {
-  id: number
+  id: string
   description: string
   amount: number
   date: string
   groupName: string
-  groupId: number
+  groupId: string
   currency: string
 }
 

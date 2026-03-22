@@ -3,7 +3,7 @@ import styles from './EditGroupModal.module.css';
 
 interface Props {
   group: {
-    id: number;
+    id: string;
     name: string;
     description: string;
     currency: string;

@@ -81,6 +81,22 @@
   align-items: center;
   padding: 4px 0;
   border-bottom: 1px solid #eee;
+  gap: 8px;
+}
+
+.participantName {
+  font-weight: 500;
+}
+
+.participantEmail {
+  color: #888;
+  font-size: 14px;
+  flex: 1;
+}
+
+.error {
+  color: #d32f2f;
+  font-size: 14px;
 }
 .participantItem button {
   background: none;

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import styles from './CreateGroupModal.module.css';
+import { findUserByEmail } from '../../services/user';
 
 interface Participant {
+  id: string;
   email: string;
-  name?: string;
+  name: string;
 }
 
 interface Props {
@@ -12,7 +14,7 @@ interface Props {
     name: string;
     description: string;
     currency: string;
-    participants: Participant[];
+    participantIds: string[];
   }) => void;
 }
 
@@ -22,15 +24,33 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onCreate }) => {
   const [currency, setCurrency] = useState('RUB');
   const [participantEmail, setParticipantEmail] = useState('');
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
-  const handleAddParticipant = () => {
-    if (!participantEmail.trim()) return;
-    if (!participantEmail.includes('@')) {
-      alert('Введите корректный email');
+  const handleAddParticipant = async () => {
+    const email = participantEmail.trim();
+    if (!email) return;
+    if (!email.includes('@')) {
+      setSearchError('Введите корректный email');
       return;
     }
-    setParticipants([...participants, { email: participantEmail }]);
-    setParticipantEmail('');
+    setSearching(true);
+    setSearchError('');
+    try {
+      const user = await findUserByEmail(email);
+      if (!user) {
+        setSearchError('Пользователь с таким email не найден');
+        return;
+      }
+      if (participants.some(p => p.email === email)) {
+        setSearchError('Этот пользователь уже добавлен');
+        return;
+      }
+      setParticipants([...participants, { id: user.id, email, name: user.username }]);
+      setParticipantEmail('');
+    } finally {
+      setSearching(false);
+    }
   };
 
   const handleRemoveParticipant = (email: string) => {
@@ -40,7 +60,7 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onCreate }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onCreate({ name, description, currency, participants });
+    onCreate({ name, description, currency, participantIds: participants.map(p => p.id) });
     onClose();
   };
 
@@ -75,16 +95,19 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onCreate }) => {
                 type="email"
                 placeholder="email@example.com"
                 value={participantEmail}
-                onChange={(e) => setParticipantEmail(e.target.value)}
+                onChange={(e) => { setParticipantEmail(e.target.value); setSearchError(''); }}
+                disabled={searching}
               />
-              <button type="button" onClick={handleAddParticipant} className={styles.addButton}>
-                Добавить
+              <button type="button" onClick={handleAddParticipant} className={styles.addButton} disabled={searching}>
+                {searching ? '...' : 'Добавить'}
               </button>
             </div>
+            {searchError && <div className={styles.error}>{searchError}</div>}
             <div className={styles.participantList}>
               {participants.map(p => (
                 <div key={p.email} className={styles.participantItem}>
-                  <span>{p.email}</span>
+                  <span className={styles.participantName}>{p.name}</span>
+                  <span className={styles.participantEmail}>{p.email}</span>
                   <button type="button" onClick={() => handleRemoveParticipant(p.email)}>✕</button>
                 </div>
               ))}

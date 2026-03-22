@@ -36,3 +36,17 @@ export const changePassword = async (
 ): Promise<void> => {
   await api.patch("/users/me/password", { old_password, new_password })
 }
+
+export interface FoundUser {
+  id: string
+  username: string
+}
+
+export const findUserByEmail = async (email: string): Promise<FoundUser | null> => {
+  try {
+    const { data } = await api.post<FoundUser>("/users/find", { email })
+    return data
+  } catch (e) {
+    return null
+  }
+}

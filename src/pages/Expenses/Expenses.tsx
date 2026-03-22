@@ -10,8 +10,8 @@ const Expenses: React.FC = () => {
   const { user } = useAuth()
   const [expenses, setExpenses] = useState<
     Array<{
-      id: number
-      groupId: number
+      id: string
+      groupId: string
       description: string
       amount: number
       date: string

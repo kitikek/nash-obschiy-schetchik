@@ -27,7 +27,7 @@ const Balances: React.FC = () => {
 
       for (const group of groups) {
         const members = await getGroupMembers(group.id)
-        const nameById = (id: number) => members.find((m) => m.id === id)?.name ?? `Пользователь ${id}`
+        const nameById = (id: string) => members.find((m) => m.id === id)?.name ?? `Пользователь ${id}`
 
         const me = await getGroupBalancesMe(group.id)
         me.oweTo.forEach((row) => {

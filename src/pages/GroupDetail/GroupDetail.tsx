@@ -33,19 +33,19 @@ const GroupDetail: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [memberToRemove, setMemberToRemove] = useState<GroupMemberView | null>(null)
   const [group, setGroup] = useState<{
-    id: number
+    id: string
     name: string
     description?: string
     currency: string
-    authorId: number
+    authorId: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
 
-  const gid = id ? Number(id) : NaN
+  const gid = id ?? ''
 
   const reloadBalances = useCallback(async () => {
-    if (!Number.isFinite(gid)) return
+    if (!gid) return
     try {
       const { recommended_transfers } = await getGroupBalances(gid)
       setTransfers(recommended_transfers)
@@ -97,8 +97,8 @@ const GroupDetail: React.FC = () => {
     description: string
     amount: number
     date: string
-    payerId: number
-    participantIds: number[]
+    payerId: string
+    participantIds: string[]
   }) => {
     if (!id) return
     await createExpense(id, expenseData)
@@ -106,7 +106,7 @@ const GroupDetail: React.FC = () => {
     await reloadBalances()
   }
 
-  const handleAddMember = async (userId: number) => {
+  const handleAddMember = async (userId: string) => {
     if (!id) return
     try {
       await addMemberToGroup(id, userId)
@@ -121,7 +121,7 @@ const GroupDetail: React.FC = () => {
     }
   }
 
-  const handleRemoveMember = async (userId: number) => {
+  const handleRemoveMember = async (userId: string) => {
     if (!id) return
     try {
       await removeMemberFromGroup(id, userId)
@@ -148,7 +148,7 @@ const GroupDetail: React.FC = () => {
 
   const handleUpdateGroup = async (data: { name: string; description?: string; currency: string }) => {
     if (!id) return
-    const updated = await updateGroup(Number(id), data)
+    const updated = await updateGroup(id, data)
     if (updated) {
       setGroup({
         id: updated.id,
@@ -163,7 +163,7 @@ const GroupDetail: React.FC = () => {
   const handleDeleteGroup = async () => {
     if (!id) return
     try {
-      await deleteGroup(Number(id))
+      await deleteGroup(id)
       navigate('/groups')
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -174,7 +174,7 @@ const GroupDetail: React.FC = () => {
     }
   }
 
-  const getUserName = (userId: number) => {
+  const getUserName = (userId: string) => {
     return members.find((m) => m.id === userId)?.name || `Пользователь ${userId}`
   }
 

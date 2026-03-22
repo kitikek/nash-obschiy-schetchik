@@ -23,11 +23,12 @@ const GroupsList: React.FC = () => {
     })
   }, [user])
 
-  const handleCreateGroup = async (groupData: { name: string; description?: string; currency: string }) => {
+  const handleCreateGroup = async (groupData: { name: string; description?: string; currency: string; participantIds?: string[] }) => {
     const newGroup = await createGroup({
       name: groupData.name,
       description: groupData.description,
       currency: groupData.currency,
+      participantIds: groupData.participantIds,
     })
     setGroups((prev) => [
       ...prev,

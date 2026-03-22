@@ -7,14 +7,14 @@ import type { ExpenseParticipant } from './expenseParticipant';
  * Таблица "Расход".
  */
 export interface Expense {
-  id: number;
-  groupId: number;
+  id: string;
+  groupId: string;
   description: string;
   amount: number;
   date: string;
-  createdBy: number;         // ID создателя
+  createdBy: string;         // ID создателя
   createdAt: string;         // ISO
-  updatedBy?: number;        // ID последнего редактора
+  updatedBy?: string;        // ID последнего редактора
   updatedAt?: string;        // ISO
   isDeleted: boolean;
   participants: ExpenseParticipant[];
@@ -24,12 +24,12 @@ export interface Expense {
  * Данные для создания нового расхода.
  */
 export interface CreateExpenseData {
-  groupId: number;
+  groupId: string;
   description: string;
   amount: number;
   date: string;              // или Date, но на практике строка
-  payerId: number;           // ID плательщика
-  participantIds: number[];  // Список ID участников расхода (включая плательщика)
+  payerId: string;           // ID плательщика
+  participantIds: string[];  // Список ID участников расхода (включая плательщика)
 }
 
 /**
@@ -39,7 +39,7 @@ export interface UpdateExpenseData {
   description?: string;
   amount?: number;
   date?: string;
-  payerId?: number;
-  participantIds?: number[];
+  payerId?: string;
+  participantIds?: string[];
   isDeleted?: boolean;
 }

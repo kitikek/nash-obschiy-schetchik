@@ -124,3 +124,47 @@
 .cancel:hover {
   background-color: #f0f0f0;
 }
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+}
+
+.searchRow input {
+  flex: 1;
+}
+
+.searchRow button {
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.searchRow button:hover {
+  background-color: #555;
+}
+.searchRow button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.foundUser {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.userName {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.userEmail {
+  color: #666;
+  font-size: 14px;
+}

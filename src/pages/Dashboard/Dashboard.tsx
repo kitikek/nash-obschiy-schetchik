@@ -19,12 +19,12 @@ const Dashboard: React.FC = () => {
   const [filteredGroups, setFilteredGroups] = useState<Group[]>([])
   const [recentExpenses, setRecentExpenses] = useState<
     Array<{
-      id: number
+      id: string
       description: string
       amount: number
       date: string
       groupName: string
-      groupId: number
+      groupId: string
       currency: string
     }>
   >([])

@@ -5,9 +5,9 @@
  * Таблица "Участник расхода".
  */
 export interface ExpenseParticipant {
-  id: number;
-  expenseId: number;
-  userId: number;
+  id: string;
+  expenseId: string;
+  userId: string;
   debt: number;
   isPayer: boolean;
   paid: boolean;             // Подтверждено плательщиком
@@ -18,7 +18,7 @@ export interface ExpenseParticipant {
  * Данные для добавления участника к расходу (обычно используется внутри CreateExpenseData).
  */
 export interface ExpenseParticipantData {
-  userId: number;
+  userId: string;
   debt?: number;             // Если нужно явно указать долг (при неравномерном распределении)
   isPayer: boolean;
 }

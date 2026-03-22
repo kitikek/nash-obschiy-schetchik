@@ -1,5 +1,5 @@
 export interface Transfer {
-  creditorId: number
-  debtorId: number
+  creditorId: string
+  debtorId: string
   amount: number
 }

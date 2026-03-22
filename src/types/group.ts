@@ -7,10 +7,10 @@ import type { User } from './user';
  * Таблица "Группы".
  */
 export interface Group {
-  id: number;                // ID группы (счетчик)
+  id: string;                // ID группы (xid)
   name: string;              // Название группы (до 100 символов)
   description?: string;      // Описание (до 500 символов)
-  authorId: number;          // ID автора (создателя) группы
+  authorId: string;          // ID автора (создателя) группы
   createdAt: string;         // Дата создания (ISO)
   updatedAt?: string;        // Дата последнего обновления (ISO)
   status: boolean;           // Статус группы (активна/архивирована)
@@ -30,8 +30,7 @@ export interface CreateGroupData {
   name: string;
   description?: string;
   currency: string;
-  // Можно передавать список участников (их email или id) — зависит от API
-  participantIds?: number[];
+  participantIds?: string[];
 }
 
 /**

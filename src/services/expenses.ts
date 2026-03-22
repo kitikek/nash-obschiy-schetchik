@@ -12,8 +12,8 @@ export type CreateExpenseInput = {
   description: string
   amount: number
   date: string
-  payerId: number
-  participantIds: number[]
+  payerId: string
+  participantIds: string[]
 }
 
 export interface ExpensesListParams {
@@ -27,9 +27,9 @@ type ListItem = ExpenseDto & { participants?: ExpenseParticipantDto[] }
 
 function toParticipantPayload(
   total: number,
-  payerId: number,
-  participantIds: number[]
-): { user_id: number; share_amount: number; is_payer: boolean }[] {
+  payerId: string,
+  participantIds: string[]
+): { user_id: string; share_amount: number; is_payer: boolean }[] {
   const shares = splitTotalEqually(total, participantIds)
   return shares.map((s) => ({
     user_id: s.user_id,
@@ -38,7 +38,7 @@ function toParticipantPayload(
   }))
 }
 
-async function getGroupCurrency(groupId: number): Promise<string> {
+async function getGroupCurrency(groupId: string | number): Promise<string> {
   const { data } = await api.get<{ group: { currency?: string } }>(`/groups/${groupId}`)
   return data.group?.currency ?? "RUB"
 }
@@ -63,11 +63,10 @@ export const getExpensesByGroup = async (
   params?: ExpensesListParams,
   options?: { loadParticipants?: boolean }
 ): Promise<{ items: Expense[]; total: number; page: number; currency: string }> => {
-  const gid = typeof groupId === "string" ? parseInt(groupId, 10) : groupId
-  const currency = await getGroupCurrency(gid)
+  const currency = await getGroupCurrency(groupId)
   const loadParts = options?.loadParticipants !== false
   const { data } = await api.get<{ items: ListItem[]; total: number; page: number }>(
-    `/groups/${gid}/expenses`,
+    `/groups/${groupId}/expenses`,
     {
       params: {
         page: params?.page ?? 1,
@@ -86,7 +85,7 @@ export const getExpensesByGroup = async (
           const { data: one } = await api.get<{
             expense: ExpenseDto
             participants: ExpenseParticipantDto[]
-          }>(`/groups/${gid}/expenses/${row.id}`)
+          }>(`/groups/${groupId}/expenses/${row.id}`)
           parts = one.participants
         } catch {
           parts = []
@@ -103,10 +102,9 @@ export const createExpense = async (
   groupId: string | number,
   data: CreateExpenseInput
 ): Promise<Expense & { currency: string }> => {
-  const gid = typeof groupId === "string" ? parseInt(groupId, 10) : groupId
-  const currency = await getGroupCurrency(gid)
+  const currency = await getGroupCurrency(groupId)
   const participants = toParticipantPayload(data.amount, data.payerId, data.participantIds)
-  const { data: res } = await api.post<{ expense: ExpenseDto }>(`/groups/${gid}/expenses`, {
+  const { data: res } = await api.post<{ expense: ExpenseDto }>(`/groups/${groupId}/expenses`, {
     description: data.description,
     total_amount: data.amount,
     expense_date: data.date,
@@ -115,13 +113,13 @@ export const createExpense = async (
   const { data: one } = await api.get<{
     expense: ExpenseDto
     participants: ExpenseParticipantDto[]
-  }>(`/groups/${gid}/expenses/${res.expense.id}`)
+  }>(`/groups/${groupId}/expenses/${res.expense.id}`)
   return mapExpenseDto(one.expense, one.participants, currency)
 }
 
 export const getExpenseById = async (
-  groupId: number,
-  expenseId: number
+  groupId: string | number,
+  expenseId: string | number
 ): Promise<(Expense & { currency: string }) | undefined> => {
   try {
     const currency = await getGroupCurrency(groupId)
@@ -136,14 +134,14 @@ export const getExpenseById = async (
 }
 
 export const updateExpense = async (
-  groupId: number,
-  expenseId: number,
+  groupId: string | number,
+  expenseId: string | number,
   data: {
     description: string
     amount: number
     date: string
-    payerId: number
-    participantIds: number[]
+    payerId: string
+    participantIds: string[]
   }
 ): Promise<Expense & { currency: string }> => {
   const currency = await getGroupCurrency(groupId)
@@ -165,14 +163,14 @@ export const updateExpense = async (
   return mapExpenseDto(one.expense, one.participants, currency)
 }
 
-export const deleteExpense = async (groupId: number, expenseId: number): Promise<void> => {
+export const deleteExpense = async (groupId: string | number, expenseId: string | number): Promise<void> => {
   await api.delete(`/groups/${groupId}/expenses/${expenseId}`)
 }
 
 export interface UserExpenseRow extends Expense {
   currency: string
   groupName: string
-  groupId: number
+  groupId: string
 }
 
 export const getUserExpensesAggregated = async (params?: {

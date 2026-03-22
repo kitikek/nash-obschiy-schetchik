@@ -6,7 +6,7 @@ import type { Balance } from "../types/balance"
 
 /** Backend user DTO (snake_case) */
 export interface UserDto {
-  id: number
+  id: string
   username: string
   email: string
   phone?: string | null
@@ -26,11 +26,11 @@ export function mapUserDto(dto: UserDto): User {
 }
 
 export interface GroupDto {
-  id: number
+  id: string
   name: string
   description?: string | null
   currency?: string
-  created_by: number
+  created_by: string
   created_at: string
   updated_at?: string | null
   is_active: boolean
@@ -51,22 +51,22 @@ export function mapGroupDto(dto: GroupDto, extras?: Partial<Group>): Group {
 }
 
 export interface ExpenseParticipantDto {
-  id?: number
-  user_id: number
+  id?: string
+  user_id: string
   share_amount: number | string
   is_payer: boolean
 }
 
 export interface ExpenseDto {
-  id: number
-  group_id: number
+  id: string
+  group_id: string
   description: string
   total_amount: number | string
   expense_date: string
-  created_by: number
+  created_by: string
   created_at: string
   updated_at?: string | null
-  updated_by?: number | null
+  updated_by?: string | null
   is_deleted: boolean
 }
 
@@ -83,7 +83,7 @@ export function mapExpenseDto(
     const share =
       typeof p.share_amount === "string" ? parseFloat(p.share_amount) : p.share_amount
     return {
-      id: p.id ?? p.user_id * 100000 + idx,
+      id: p.id ?? `temp_${p.user_id}_${idx}`,
       expenseId: dto.id,
       userId: p.user_id,
       debt: share,
@@ -109,10 +109,10 @@ export function mapExpenseDto(
 }
 
 export function mapBalanceDto(dto: {
-  id: number
-  group_id: number
-  creditor_id: number
-  debtor_id: number
+  id: string
+  group_id: string
+  creditor_id: string
+  debtor_id: string
   amount: number | string
   paid_amount: number | string
   last_updated: string

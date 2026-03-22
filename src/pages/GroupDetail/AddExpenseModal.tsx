@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from './AddExpenseModal.module.css';
 
 interface Member {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -14,16 +14,16 @@ interface Props {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    payerId: string;
+    participantIds: string[];
   }) => Promise<void>;
 }
 const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [payerId, setPayerId] = useState<number>(members[0]?.id || 0);
-  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(
+  const [payerId, setPayerId] = useState<string>(members[0]?.id || '');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
     members.map(m => m.id)
   );
 
@@ -67,7 +67,7 @@ const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
     }
   };
 
-  const toggleParticipant = (memberId: number) => {
+  const toggleParticipant = (memberId: string) => {
     setSelectedParticipants(prev =>
       prev.includes(memberId)
         ? prev.filter(id => id !== memberId)
