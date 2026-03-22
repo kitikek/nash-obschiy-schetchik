@@ -1,62 +1,65 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import Navbar from '../../components/Navbar/Navbar'
-import GoBackButton from '../../components/GoBackButton/GoBackButton'
-import { useAuth } from '../../contexts/AuthContext'
-import { getGroups } from '../../services/groups'
-import { getGroupBalancesMe, payBalance } from '../../services/balances'
-import { getGroupMembers } from '../../services/members'
-import { getCurrencySymbol } from '../../utils/currency'
-import { formatMoney } from '../../utils/formatMoney'
-import styles from './Balances.module.css'
+import React, { useEffect, useState, useCallback } from "react";
+import Navbar from "../../components/Navbar/Navbar";
+import GoBackButton from "../../components/GoBackButton/GoBackButton";
+import { useAuth } from "../../contexts/AuthContext";
+import { getGroups } from "../../services/groups";
+import { getGroupBalancesMe, payBalance } from "../../services/balances";
+import { getGroupMembers } from "../../services/members";
+import { getCurrencySymbol } from "../../utils/currency";
+import { formatMoney } from "../../utils/formatMoney";
+import styles from "./Balances.module.css";
 
 interface Debt {
-  to: string
-  amount: number
-  currency: string
-  groupName: string
-  groupId: string
-  debtorId: string
-  creditorId: string
+  to: string;
+  amount: number;
+  currency: string;
+  groupName: string;
+  groupId: string;
+  debtorId: string;
+  creditorId: string;
 }
 
 interface Credit {
-  from: string
-  amount: number
-  currency: string
-  groupName: string
-  groupId: string
-  debtorId: string
-  creditorId: string
+  from: string;
+  amount: number;
+  currency: string;
+  groupName: string;
+  groupId: string;
+  debtorId: string;
+  creditorId: string;
 }
 
 const Balances: React.FC = () => {
-  const { user } = useAuth()
-  const [debts, setDebts] = useState<Debt[]>([])
-  const [credits, setCredits] = useState<Credit[]>([])
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth();
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [credits, setCredits] = useState<Credit[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    if (!user) return
-    setLoading(true)
-    const groups = await getGroups()
-    const debtsList: Debt[] = []
-    const creditsList: Credit[] = []
+    if (!user) return;
+    setLoading(true);
+    const groups = await getGroups();
+    const debtsList: Debt[] = [];
+    const creditsList: Credit[] = [];
 
     for (const group of groups) {
-      let members: { id: string; name: string }[] = []
+      let members: { id: string; name: string }[] = [];
       try {
-        members = await getGroupMembers(group.id)
+        members = await getGroupMembers(group.id);
       } catch (error) {
-        console.error(`Не удалось загрузить участников группы ${group.id}`, error)
+        console.error(
+          `Не удалось загрузить участников группы ${group.id}`,
+          error,
+        );
       }
 
       const getName = (id: string | number) => {
-        const userId = String(id)
-        const member = members.find(m => String(m.id) === userId)
-        return member?.name ?? `Пользователь ${userId}`
-      }
+        const userId = String(id);
+        const member = members.find((m) => String(m.id) === userId);
+        return member?.name ?? `Пользователь ${userId}`;
+      };
 
-      const me = await getGroupBalancesMe(group.id)
+      const me = await getGroupBalancesMe(group.id);
 
       me.oweTo.forEach((row) => {
         debtsList.push({
@@ -67,8 +70,8 @@ const Balances: React.FC = () => {
           groupId: group.id,
           debtorId: user.id,
           creditorId: row.userId,
-        })
-      })
+        });
+      });
 
       me.owedBy.forEach((row) => {
         creditsList.push({
@@ -79,30 +82,35 @@ const Balances: React.FC = () => {
           groupId: group.id,
           debtorId: row.userId,
           creditorId: user.id,
-        })
-      })
+        });
+      });
     }
 
-    setDebts(debtsList)
-    setCredits(creditsList)
-    setLoading(false)
-  }, [user])
+    setDebts(debtsList);
+    setCredits(creditsList);
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    loadData();
+  }, [loadData]);
 
-  const handlePay = async (groupId: string, creditorId: string, debtorId: string, amount: number) => {
+  const handlePay = async (
+    groupId: string,
+    creditorId: string,
+    debtorId: string,
+    amount: number,
+  ) => {
     try {
-      await payBalance(groupId, creditorId, debtorId, amount)
-      await loadData()
+      await payBalance(groupId, creditorId, debtorId, amount);
+      await loadData();
     } catch (err) {
-      console.error(err)
-      alert('Ошибка при оплате')
+      console.error(err);
+      alert("Ошибка при оплате");
     }
-  }
+  };
 
-  if (loading) return <div className={styles.container}>Загрузка...</div>
+  if (loading) return <div className={styles.container}>Загрузка...</div>;
 
   return (
     <>
@@ -128,7 +136,9 @@ const Balances: React.FC = () => {
                     </span>
                     <button
                       className={styles.payButton}
-                      onClick={() => handlePay(d.groupId, d.creditorId, d.debtorId, d.amount)}
+                      onClick={() =>
+                        handlePay(d.groupId, d.creditorId, d.debtorId, d.amount)
+                      }
                     >
                       Оплатить
                     </button>
@@ -162,7 +172,7 @@ const Balances: React.FC = () => {
         </section>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Balances
+export default Balances;
