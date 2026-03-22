@@ -18,7 +18,7 @@ const GroupCard: React.FC<Props> = ({ group }) => {
       <div className={styles.name}>{group.name}</div>
       <div className={styles.meta}>
         <span>
-          Участников: {group.participants?.length ?? 0} &nbsp;
+          Участников: {group.participantsCount ?? 0} &nbsp;
           Расходов: {group.expensesCount != null ? group.expensesCount : '—'}
         </span>
         <span>

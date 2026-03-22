@@ -20,6 +20,7 @@ export interface Group {
 
   // === Новые поля для карточки ===
   expensesCount?: number;    // Количество расходов в группе
+  participantsCount?: number; // Количество участников
   userBalance?: number;      // Баланс текущего пользователя
 }
 

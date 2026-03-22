@@ -5,6 +5,7 @@ import type { Group, CreateGroupData, UpdateGroupData } from "../types/group"
 interface GroupListRow {
   group: GroupDto
   my_balance: number | string
+  participants_count?: number
 }
 
 interface GroupDetailResponse {
@@ -30,6 +31,7 @@ export const getGroups = async (): Promise<Group[]> => {
         : row.my_balance
     return mapGroupDto(row.group, {
       userBalance: balance,
+      participantsCount: row.participants_count,
       participants: [],
     })
   })

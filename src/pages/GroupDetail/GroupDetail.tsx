@@ -55,13 +55,13 @@ const GroupDetail: React.FC = () => {
   }, [gid])
 
   const reloadExpenses = useCallback(async () => {
-    if (!Number.isFinite(gid)) return
+    if (!gid) return
     const { items } = await getExpensesByGroup(gid, { page: 1, limit: 200 })
     setExpenses(items)
   }, [gid])
 
   useEffect(() => {
-    if (!id || !Number.isFinite(gid)) return
+    if (!id || !gid) return
     setLoading(true)
     setListError('')
     Promise.all([
