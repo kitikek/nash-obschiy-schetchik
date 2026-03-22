@@ -1,40 +1,43 @@
-// src/services/members.ts
-import { groupMembers, users } from '../mocks/db';
+import { api } from "./api"
 
-const delay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms));
+export interface GroupMemberView {
+  id: string
+  name: string
+  isAdmin: boolean
+}
 
-export const getGroupMembers = async (groupId: string | number) => {
-  await delay();
-  const groupIdNum = typeof groupId === 'string' ? parseInt(groupId, 10) : groupId;
-  const memberIds = groupMembers.filter(gm => gm.groupId === groupIdNum).map(gm => gm.userId);
-  return users.filter(u => memberIds.includes(u.id)).map(u => ({ id: u.id, name: u.name }));
-};
+export const getGroupMembers = async (
+  groupId: string | number
+): Promise<GroupMemberView[]> => {
+  const { data } = await api.get<unknown>(`/groups/${groupId}/members`)
+  const list = Array.isArray(data) ? data : []
+  return list.map((item: unknown) => {
+    const row = item as { member?: Record<string, unknown> } & Record<string, unknown>
+    const m = (row.member ?? row) as {
+      user_id?: string
+      username?: string
+      name?: string
+      is_admin?: boolean
+    }
+    const id = m.user_id ?? ""
+    return {
+      id,
+      name: m.username ?? m.name ?? `Пользователь ${id}`,
+      isAdmin: Boolean(m.is_admin),
+    }
+  })
+}
 
-export const addMemberToGroup = async (groupId: string | number, email: string): Promise<void> => {
-  await delay();
-  const groupIdNum = typeof groupId === 'string' ? parseInt(groupId, 10) : groupId;
-  const user = users.find(u => u.email === email);
-  if (!user) {
-    throw new Error('Пользователь с таким email не найден');
-  }
-  const existing = groupMembers.find(gm => gm.groupId === groupIdNum && gm.userId === user.id);
-  if (existing) {
-    throw new Error('Пользователь уже в группе');
-  }
-  const newId = groupMembers.length + 1;
-  groupMembers.push({
-    id: newId,
-    userId: user.id,
-    groupId: groupIdNum,
-    joinedAt: new Date().toISOString(),
-    isAdmin: false,
-  });
-};
+export const addMemberToGroup = async (
+  groupId: string | number,
+  userId: string | number
+): Promise<void> => {
+  await api.post(`/groups/${groupId}/members`, { user_id: userId })
+}
 
-export const removeMemberFromGroup = async (groupId: string | number, userId: number): Promise<void> => {
-  await delay();
-  const groupIdNum = typeof groupId === 'string' ? parseInt(groupId, 10) : groupId;
-  const memberIndex = groupMembers.findIndex(gm => gm.groupId === groupIdNum && gm.userId === userId);
-  if (memberIndex === -1) throw new Error('Участник не найден');
-  groupMembers.splice(memberIndex, 1);
-};
+export const removeMemberFromGroup = async (
+  groupId: string | number,
+  userId: string | number
+): Promise<void> => {
+  await api.delete(`/groups/${groupId}/members/${userId}`)
+}

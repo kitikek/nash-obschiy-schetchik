@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { resetPassword } from '../../services/auth';
+import { resetPassword } from '../../services/passwordResetStub';
 import styles from './Auth.module.css';
 
 const ResetPassword: React.FC = () => {

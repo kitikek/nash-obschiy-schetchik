@@ -1,38 +1,51 @@
-import { api } from './api';
-import type { User } from '../types/user';
+import { api, ApiError } from "./api"
+import { mapUserDto, type UserDto } from "./apiMappers"
+import type { User } from "../types/user"
 
 export interface LoginCredentials {
-  email: string;
-  password: string;
+  email: string
+  password: string
 }
 
 export interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
+  username: string
+  email: string
+  password: string
+  phone?: string
 }
 
 export interface AuthResponse {
-  token: string;
-  user: User;
+  token: string
+  user: User
 }
 
-// === Авторизация ===
-export const login = async ({ email, password }: LoginCredentials): Promise<AuthResponse> => {
-  const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
-  return data;
-};
+export const login = async ({
+  email,
+  password,
+}: LoginCredentials): Promise<AuthResponse> => {
+  const { data } = await api.post<{ token: string; user: UserDto }>("/auth/login", {
+    email,
+    password,
+  })
+  return { token: data.token, user: mapUserDto(data.user) }
+}
 
+/** Регистрация по спеке возвращает только id/username/email; дальше — вход. */
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
-  const { data: response } = await api.post<AuthResponse>('/auth/register', data);
-  return response;
-};
+  await api.post("/auth/register", {
+    username: data.username,
+    email: data.email,
+    password: data.password,
+    ...(data.phone ? { phone: data.phone } : {}),
+  })
+  return login({ email: data.email, password: data.password })
+}
 
-// === Восстановление пароля ===
-export const requestPasswordReset = async (email: string): Promise<void> => {
-  await api.post('/auth/forgot-password', { email });
-};
-
-export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
-  await api.post('/auth/reset-password', { token, newPassword });
-};
+export const logout = async (): Promise<void> => {
+  try {
+    await api.post("/auth/logout")
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return
+    throw e
+  }
+}

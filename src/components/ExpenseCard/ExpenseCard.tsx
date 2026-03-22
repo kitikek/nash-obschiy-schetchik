@@ -5,17 +5,19 @@ import { formatMoney } from '../../utils/formatMoney';
 import { getCurrencySymbol } from '../../utils/currency';
 
 interface ExpenseCardProps {
-  id: number;
+  id: string;
+  groupId: string;
   description: string;
   amount: number;
   date: string;
   groupName?: string;
   currency?: string;
-  participants?: { userId: number; name: string; debt: number; isPayer: boolean }[];
+  participants?: { userId: string; name: string; debt: number; isPayer: boolean }[];
 }
 
 const ExpenseCard: React.FC<ExpenseCardProps> = ({
   id,
+  groupId,
   description,
   amount,
   date,
@@ -24,7 +26,7 @@ const ExpenseCard: React.FC<ExpenseCardProps> = ({
   participants = [],
 }) => {
   return (
-    <Link to={`/expenses/${id}`} className={styles.card}>
+    <Link to={`/groups/${groupId}/expenses/${id}`} className={styles.card}>
       <div className={styles.header}>
         <strong>{description}</strong>
         <span>{formatMoney(amount)} {getCurrencySymbol(currency)}</span>

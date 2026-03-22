@@ -5,10 +5,10 @@
  * Таблица "Баланс".
  */
 export interface Balance {
-  id: number;                // ID баланса (счетчик)
-  groupId: number;           // ID группы
-  creditorId: number;        // ID пользователя-кредитора (кому должны)
-  debtorId: number;          // ID пользователя-должника (кто должен)
+  id: string;                // ID баланса (xid)
+  groupId: string;           // ID группы
+  creditorId: string;        // ID пользователя-кредитора (кому должны)
+  debtorId: string;          // ID пользователя-должника (кто должен)
   amount: number;            // Сумма долга (вещественное)
   paidAmount: number;        // Оплаченная сумма (вещественное, по умолчанию 0)
   lastUpdated: string;       // Последнее обновление (ISO)
@@ -19,9 +19,9 @@ export interface Balance {
  * Может содержать имена вместо id.
  */
 export interface BalanceView {
-  creditorId: number;
+  creditorId: string;
   creditorName: string;
-  debtorId: number;
+  debtorId: string;
   debtorName: string;
   amount: number;
   paidAmount: number;
@@ -32,8 +32,8 @@ export interface BalanceView {
  * Данные для отметки о частичном погашении долга.
  */
 export interface PayBalanceData {
-  balanceId: number;
+  balanceId: string;
   amount: number;            // Сумма, которую платят
-  paidBy: number;            // ID должника (кто платит)
-  paidTo: number;            // ID кредитора (кому платят)
+  paidBy: string;            // ID должника (кто платит)
+  paidTo: string;            // ID кредитора (кому платят)
 }

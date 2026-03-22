@@ -1,100 +1,154 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import Navbar from '../../components/Navbar/Navbar';
-import AddExpenseModal from './AddExpenseModal';
-import AddMembersModal from '../../components/AddMembersModal/AddMembersModal';
-import EditGroupModal from './EditGroupModal';
-import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
-import { getExpensesByGroup, createExpense } from '../../services/expenses';
-import { getGroupMembers, addMemberToGroup, removeMemberFromGroup } from '../../services/members';
-import { getGroupById, updateGroup, deleteGroup } from '../../services/groups';
-import { calculateBalances } from '../../utils/calculateBalances';
-import { formatMoney } from '../../utils/formatMoney';
-import { getCurrencySymbol } from '../../utils/currency';
-import type { Expense } from '../../types/expense';
-import type { Transfer } from '../../types/transfer';
-import GoBackButton from '../../components/GoBackButton/GoBackButton';
-import ExpenseCard from '../../components/ExpenseCard/ExpenseCard';
-import { useAuth } from '../../contexts/AuthContext';
-import ActionButtons from '../../components/ActionButtons/ActionButtons';
-import styles from './GroupDetail.module.css';
+import React, { useEffect, useState, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import Navbar from '../../components/Navbar/Navbar'
+import AddExpenseModal from './AddExpenseModal'
+import AddMembersModal from '../../components/AddMembersModal/AddMembersModal'
+import EditGroupModal from './EditGroupModal'
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal'
+import { getExpensesByGroup, createExpense } from '../../services/expenses'
+import { getGroupMembers, addMemberToGroup, removeMemberFromGroup, type GroupMemberView } from '../../services/members'
+import { getGroupById, updateGroup, deleteGroup } from '../../services/groups'
+import { getGroupBalances } from '../../services/balances'
+import { formatMoney } from '../../utils/formatMoney'
+import { getCurrencySymbol } from '../../utils/currency'
+import type { Expense } from '../../types/expense'
+import type { Transfer } from '../../types/transfer'
+import GoBackButton from '../../components/GoBackButton/GoBackButton'
+import ExpenseCard from '../../components/ExpenseCard/ExpenseCard'
+import { useAuth } from '../../contexts/AuthContext'
+import ActionButtons from '../../components/ActionButtons/ActionButtons'
+import { ApiError } from '../../services/api'
+import styles from './GroupDetail.module.css'
 
 const GroupDetail: React.FC = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [members, setMembers] = useState<{ id: number; name: string }[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-  const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [members, setMembers] = useState<GroupMemberView[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [transfers, setTransfers] = useState<Transfer[]>([])
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false)
+  const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState<GroupMemberView | null>(null)
   const [group, setGroup] = useState<{
-    id: number;
-    name: string;
-    description?: string;
-    currency: string;
-    authorId: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+    id: string
+    name: string
+    description?: string
+    currency: string
+    authorId: string
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [listError, setListError] = useState('')
 
-  useEffect(() => {
-    if (id) {
-      setLoading(true);
-      Promise.all([
-        getGroupMembers(id),
-        getExpensesByGroup(id),
-        getGroupById(Number(id))
-      ]).then(([membersData, expensesData, groupData]) => {
-        setMembers(membersData);
-        setExpenses(expensesData);
-        setGroup(groupData || null);
-        setLoading(false);
-      }).catch(() => setLoading(false));
+  const gid = id ?? ''
+
+  const reloadBalances = useCallback(async () => {
+    if (!gid) return
+    try {
+      const { recommended_transfers } = await getGroupBalances(gid)
+      setTransfers(recommended_transfers)
+    } catch {
+      setTransfers([])
     }
-  }, [id]);
+  }, [gid])
+
+  const reloadExpenses = useCallback(async () => {
+    if (!gid) return
+    const { items } = await getExpensesByGroup(gid, { page: 1, limit: 200 })
+    setExpenses(items)
+  }, [gid])
 
   useEffect(() => {
-    const result = calculateBalances(expenses);
-    setTransfers(result);
-  }, [expenses]);
+    if (!id || !gid) return
+    setLoading(true)
+    setListError('')
+    Promise.all([
+      getGroupMembers(id),
+      getExpensesByGroup(id, { page: 1, limit: 200 }),
+      getGroupById(gid),
+      getGroupBalances(gid).catch(() => ({ recommended_transfers: [] as Transfer[] })),
+    ])
+      .then(([membersData, expensesRes, groupData, bal]) => {
+        setMembers(membersData)
+        setExpenses(expensesRes.items)
+        setTransfers(bal.recommended_transfers ?? [])
+        setGroup(
+          groupData
+            ? {
+                id: groupData.id,
+                name: groupData.name,
+                description: groupData.description,
+                currency: groupData.currency,
+                authorId: groupData.authorId,
+              }
+            : null
+        )
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+        setListError('Не удалось загрузить группу')
+      })
+  }, [id, gid])
 
   const handleAddExpense = async (expenseData: {
-    description: string;
-    amount: number;
-    date: string;
-    payerId: number;
-    participantIds: number[];
+    description: string
+    amount: number
+    date: string
+    payerId: string
+    participantIds: string[]
   }) => {
-    if (!id) return;
-    const newExpense = await createExpense(id, expenseData);
-    setExpenses([...expenses, newExpense]);
-  };
+    if (!id) return
+    await createExpense(id, expenseData)
+    await reloadExpenses()
+    await reloadBalances()
+  }
 
-  const handleAddMember = async (email: string) => {
-    if (!id) return;
-    await addMemberToGroup(id, email);
-    const updatedMembers = await getGroupMembers(id);
-    setMembers(updatedMembers);
-  };
+  const handleAddMember = async (userId: string) => {
+    if (!id) return
+    try {
+      await addMemberToGroup(id, userId)
+      const updatedMembers = await getGroupMembers(id)
+      setMembers(updatedMembers)
+    } catch (e) {
+      if (e instanceof ApiError) {
+        if (e.status === 403) throw new Error('Нет прав добавлять участников')
+        if (e.status === 409) throw new Error('Участник уже в группе или конфликт правил')
+      }
+      throw e
+    }
+  }
 
-  const handleRemoveMember = async (userId: number) => {
-    if (!id) return;
-    await removeMemberFromGroup(id, userId);
-    const updatedMembers = await getGroupMembers(id);
-    setMembers(updatedMembers);
-    setMemberToRemove(null);
-  };
+  const handleRemoveMember = async (userId: string) => {
+    if (!id) return
+    try {
+      await removeMemberFromGroup(id, userId)
+      const updatedMembers = await getGroupMembers(id)
+      setMembers(updatedMembers)
+      setMemberToRemove(null)
+      await reloadBalances()
+    } catch (e) {
+      if (e instanceof ApiError) {
+        if (e.status === 403) {
+          setMemberToRemove(null)
+          alert('Нет прав удалять участников')
+          return
+        }
+        if (e.status === 409) {
+          setMemberToRemove(null)
+          alert('Нельзя удалить участника: есть непогашенные долги или это создатель группы')
+          return
+        }
+      }
+      throw e
+    }
+  }
 
-  const handleUpdateGroup = async (data: {
-    name: string;
-    description?: string;
-    currency: string;
-  }) => {
-    if (!id) return;
-    const updated = await updateGroup(Number(id), data);
+  const handleUpdateGroup = async (data: { name: string; description?: string; currency: string }) => {
+    if (!id) return
+    const updated = await updateGroup(id, data)
     if (updated) {
       setGroup({
         id: updated.id,
@@ -102,26 +156,34 @@ const GroupDetail: React.FC = () => {
         description: updated.description,
         currency: updated.currency,
         authorId: updated.authorId,
-      });
+      })
     }
-  };
+  }
 
   const handleDeleteGroup = async () => {
-    if (!id) return;
-    await deleteGroup(Number(id));
-    navigate('/groups');
-  };
+    if (!id) return
+    try {
+      await deleteGroup(id)
+      navigate('/groups')
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        alert('Нельзя удалить группу: есть незакрытые долги или ограничения сервера')
+        return
+      }
+      throw e
+    }
+  }
 
-  const getUserName = (userId: number) => {
-    return members.find(m => m.id === userId)?.name || `Пользователь ${userId}`;
-  };
+  const getUserName = (userId: string) => {
+    return members.find((m) => m.id === userId)?.name || `Пользователь ${userId}`
+  }
 
-  const hasMembers = members.length > 0;
+  const hasMembers = members.length > 0
+  const canManageMembers = Boolean(user && members.some((m) => m.id === user.id && m.isAdmin))
 
-  if (loading) return <div className={styles.container}>Загрузка...</div>;
-  if (!group) return <div className={styles.container}>Группа не найдена или была удалена</div>;
-
-  const isCreator = user?.id === group.authorId;
+  if (loading) return <div className={styles.container}>Загрузка...</div>
+  if (listError) return <div className={styles.container}>{listError}</div>
+  if (!group) return <div className={styles.container}>Группа не найдена или нет доступа</div>
 
   return (
     <>
@@ -143,15 +205,13 @@ const GroupDetail: React.FC = () => {
           <div className={styles.membersSection}>
             <h3 className={styles.membersTitle}>Участники ({members.length})</h3>
             <div className={styles.membersList}>
-              {members.map(member => (
+              {members.map((member) => (
                 <div key={member.id} className={styles.memberItem}>
                   <span>
                     {member.name}
-                    {member.id === group.authorId && (
-                      <span className={styles.creatorBadge}> (создатель)</span>
-                    )}
+                    {member.id === group.authorId && <span className={styles.creatorBadge}> (создатель)</span>}
                   </span>
-                  {isCreator && member.id !== user?.id && (
+                  {canManageMembers && member.id !== user?.id && member.id !== group.authorId && (
                     <button
                       className={styles.removeMemberButton}
                       onClick={() => setMemberToRemove(member)}
@@ -172,26 +232,28 @@ const GroupDetail: React.FC = () => {
           </p>
         )}
 
-        {/* Кнопки: сначала добавить участников, потом добавить расход */}
         <div className={styles.actionButtons}>
-          <button className="secondary" onClick={() => setIsMembersModalOpen(true)}>
-            + Добавить участников
-          </button>
-          <button onClick={() => setIsExpenseModalOpen(true)} disabled={!hasMembers}>
+          {canManageMembers && (
+            <button className="secondary" type="button" onClick={() => setIsMembersModalOpen(true)}>
+              + Добавить участников
+            </button>
+          )}
+          <button type="button" onClick={() => setIsExpenseModalOpen(true)} disabled={!hasMembers}>
             + Добавить расход
           </button>
         </div>
 
         <div className={styles.expenseList}>
-          {expenses.map(exp => (
+          {expenses.map((exp) => (
             <ExpenseCard
               key={exp.id}
               id={exp.id}
+              groupId={group.id}
               description={exp.description}
               amount={exp.amount}
               date={exp.date}
               currency={group.currency}
-              participants={exp.participants.map(p => ({
+              participants={exp.participants.map((p) => ({
                 userId: p.userId,
                 name: getUserName(p.userId),
                 debt: p.debt,
@@ -209,7 +271,9 @@ const GroupDetail: React.FC = () => {
               <span>
                 {getUserName(t.debtorId)} → {getUserName(t.creditorId)}
               </span>
-              <strong>{formatMoney(t.amount)} {getCurrencySymbol(group.currency)}</strong>
+              <strong>
+                {formatMoney(t.amount)} {getCurrencySymbol(group.currency)}
+              </strong>
             </div>
           ))}
         </div>
@@ -224,10 +288,7 @@ const GroupDetail: React.FC = () => {
         )}
 
         {isMembersModalOpen && (
-          <AddMembersModal
-            onClose={() => setIsMembersModalOpen(false)}
-            onAdd={handleAddMember}
-          />
+          <AddMembersModal onClose={() => setIsMembersModalOpen(false)} onAdd={handleAddMember} />
         )}
 
         {isEditGroupModalOpen && group && (
@@ -241,7 +302,7 @@ const GroupDetail: React.FC = () => {
         {showDeleteConfirm && (
           <ConfirmModal
             title="Удаление группы"
-            message={`Вы уверены, что хотите удалить группу "${group.name}"? Все расходы и участники будут потеряны.`}
+            message={`Вы уверены, что хотите удалить группу "${group.name}"?`}
             onConfirm={handleDeleteGroup}
             onCancel={() => setShowDeleteConfirm(false)}
             confirmText="Удалить"
@@ -261,7 +322,7 @@ const GroupDetail: React.FC = () => {
         )}
       </div>
     </>
-  );
-};
+  )
+}
 
-export default GroupDetail;
+export default GroupDetail

@@ -1,40 +1,45 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { register } from '../../services/auth';
-import styles from './Auth.module.css';
+import React, { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
+import { register } from '../../services/auth'
+import styles from './Auth.module.css'
 
 const Register: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
     if (password !== confirmPassword) {
-      setError('Пароли не совпадают');
-      return;
+      setError('Пароли не совпадают')
+      return
     }
     if (!termsAccepted) {
-      setError('Необходимо принять условия использования');
-      return;
+      setError('Необходимо принять условия использования')
+      return
     }
     try {
-      const response = await register({ name, email, password });
-      login(response.token, response.user, false);
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Ошибка регистрации');
+      const response = await register({
+        username: name.trim(),
+        email,
+        password,
+      })
+      login(response.token, response.user, false)
+      navigate('/')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Ошибка регистрации'
+      setError(message)
     }
-  };
+  }
 
-  const isFormValid = name && email && password && confirmPassword && termsAccepted && password === confirmPassword;
+  const isFormValid = name && email && password && confirmPassword && termsAccepted && password === confirmPassword
 
   return (
     <div className={styles.container}>
@@ -42,7 +47,7 @@ const Register: React.FC = () => {
       {error && <div className={styles.error}>{error}</div>}
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.field}>
-          <label htmlFor="name">Имя</label>
+          <label htmlFor="name">Имя (логин)</label>
           <input
             type="text"
             id="name"
@@ -102,7 +107,7 @@ const Register: React.FC = () => {
         Уже есть аккаунт? <Link to="/login">Войти</Link>
       </p>
     </div>
-  );
-};
+  )
+}
 
-export default Register;
+export default Register

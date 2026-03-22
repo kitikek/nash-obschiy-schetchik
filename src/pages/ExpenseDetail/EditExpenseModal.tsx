@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import styles from './EditExpenseModal.module.css';
 
 interface Member {
-  id: number;
+  id: string;
   name: string;
 }
 
 interface Props {
   expense: {
-    id: number;
+    id: string;
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    payerId: string;
+    participantIds: string[];
   };
   members: Member[];
   onClose: () => void;
@@ -21,8 +21,8 @@ interface Props {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
+    payerId: string;
+    participantIds: string[];
   }) => Promise<void>;
 }
 
@@ -30,8 +30,8 @@ const EditExpenseModal: React.FC<Props> = ({ expense, members, onClose, onUpdate
   const [description, setDescription] = useState(expense.description);
   const [amount, setAmount] = useState(expense.amount.toString());
   const [date, setDate] = useState(expense.date);
-  const [payerId, setPayerId] = useState<number>(expense.payerId);
-  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(expense.participantIds);
+  const [payerId, setPayerId] = useState<string>(expense.payerId);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(expense.participantIds);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,6 +44,10 @@ const EditExpenseModal: React.FC<Props> = ({ expense, members, onClose, onUpdate
     setError('');
     if (!description || !amount || !payerId || selectedParticipants.length === 0) {
       setError('Заполните все поля и выберите участников');
+      return;
+    }
+    if (selectedParticipants.length < 2) {
+      setError('Минимум 2 участника расхода');
       return;
     }
     if (!selectedParticipants.includes(payerId)) {
@@ -67,7 +71,7 @@ const EditExpenseModal: React.FC<Props> = ({ expense, members, onClose, onUpdate
     }
   };
 
-  const toggleParticipant = (memberId: number) => {
+  const toggleParticipant = (memberId: string) => {
     setSelectedParticipants(prev =>
       prev.includes(memberId)
         ? prev.filter(id => id !== memberId)

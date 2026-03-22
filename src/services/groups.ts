@@ -1,87 +1,84 @@
-import { groups, groupMembers, users, expenses } from '../mocks/db';
-import type { Group, CreateGroupData, UpdateGroupData } from '../types/group';
+import { api } from "./api"
+import { mapGroupDto, type GroupDto } from "./apiMappers"
+import type { Group, CreateGroupData, UpdateGroupData } from "../types/group"
 
-const delay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms));
+interface GroupListRow {
+  group: GroupDto
+  my_balance: number | string
+  participants_count?: number
+}
+
+interface GroupDetailResponse {
+  group: GroupDto
+  members: MemberRowDto[]
+  stats?: { expenses_count?: number; [k: string]: unknown }
+}
+
+interface MemberRowDto {
+  user_id: string
+  username: string
+  email?: string
+  is_admin?: boolean
+  joined_at?: string
+}
 
 export const getGroups = async (): Promise<Group[]> => {
-  await delay();
-  return groups
-    .filter(g => g.status === true) // только активные группы
-    .map(group => ({
-      ...group,
-      participants: groupMembers
-        .filter(gm => gm.groupId === group.id)
-        .map(gm => users.find(u => u.id === gm.userId)!)
-        .filter(Boolean),
-      expenses: expenses.filter(e => e.groupId === group.id && !e.isDeleted)
+  const { data } = await api.get<GroupListRow[]>("/groups")
+  return data.map((row) => {
+    const balance =
+      typeof row.my_balance === "string"
+        ? parseFloat(row.my_balance)
+        : row.my_balance
+    return mapGroupDto(row.group, {
+      userBalance: balance,
+      participantsCount: row.participants_count,
+      participants: [],
+    })
+  })
+}
+
+export const getGroupById = async (id: string): Promise<Group | undefined> => {
+  try {
+    const { data } = await api.get<GroupDetailResponse>(`/groups/${id}`)
+    const participants = data.members.map((m) => ({
+      id: m.user_id,
+      name: m.username,
+      email: m.email ?? "",
+      registrationDate: "",
+      phone: undefined as string | undefined,
     }))
-    .sort((a, b) => {
-      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : new Date(a.createdAt).getTime();
-      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : new Date(b.createdAt).getTime();
-      return dateB - dateA;
-    });
-};
+    const stats = data.stats as { expenses_count?: number } | undefined
+    return mapGroupDto(data.group, {
+      participants,
+      expensesCount: stats?.expenses_count,
+    })
+  } catch {
+    return undefined
+  }
+}
 
-export const getGroupById = async (id: number): Promise<Group | undefined> => {
-  await delay();
-  const group = groups.find(g => g.id === id && g.status === true);
-  if (!group) return undefined;
-  return {
-    ...group,
-    participants: groupMembers
-      .filter(gm => gm.groupId === id)
-      .map(gm => users.find(u => u.id === gm.userId)!)
-      .filter(Boolean)
-  };
-};
-
-export const createGroup = async (data: CreateGroupData & { authorId: number }): Promise<Group> => {
-  await delay();
-  const newGroup: Group = {
-    id: groups.length + 1,
+export const createGroup = async (data: CreateGroupData): Promise<Group> => {
+  const { data: res } = await api.post<{ group: GroupDto }>("/groups", {
     name: data.name,
-    description: data.description || '',
-    authorId: data.authorId,
-    createdAt: new Date().toISOString().split('T')[0],
-    status: true,
+    description: data.description,
     currency: data.currency,
-    participants: [],
-  };
-  groups.push(newGroup);
-  groupMembers.push({
-    id: groupMembers.length + 1,
-    userId: data.authorId,
-    groupId: newGroup.id,
-    joinedAt: new Date().toISOString(),
-    isAdmin: true,
-  });
-  return newGroup;
-};
+    member_ids: data.participantIds?.length ? data.participantIds : undefined,
+  })
+  return mapGroupDto(res.group, { participants: [] })
+}
 
 export const updateGroup = async (
-  groupId: number,
+  groupId: string,
   data: UpdateGroupData
 ): Promise<Group | undefined> => {
-  await delay();
-  const groupIndex = groups.findIndex(g => g.id === groupId && g.status === true);
-  if (groupIndex === -1) return undefined;
-  const oldGroup = groups[groupIndex];
-  const updatedGroup = {
-    ...oldGroup,
-    ...data,
-    updatedAt: new Date().toISOString().split('T')[0],
-  };
-  groups[groupIndex] = updatedGroup;
-  return updatedGroup;
-};
+  const body: Record<string, unknown> = {}
+  if (data.name !== undefined) body.name = data.name
+  if (data.description !== undefined) body.description = data.description
+  if (data.currency !== undefined) body.currency = data.currency
+  const { data: res } = await api.put<{ group: GroupDto }>(`/groups/${groupId}`, body)
+  return mapGroupDto(res.group)
+}
 
-export const deleteGroup = async (groupId: number): Promise<void> => {
-  await delay();
-  const groupIndex = groups.findIndex(g => g.id === groupId);
-  if (groupIndex === -1) throw new Error('Группа не найдена');
-  groups[groupIndex].status = false;
-  // Помечаем все расходы группы как удалённые
-  expenses.forEach(exp => {
-    if (exp.groupId === groupId) exp.isDeleted = true;
-  });
-};
+export const deleteGroup = async (groupId: string): Promise<void> => {
+  await api.delete(`/groups/${groupId}`)
+}

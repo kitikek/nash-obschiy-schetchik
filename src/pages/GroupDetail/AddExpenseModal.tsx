@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from './AddExpenseModal.module.css';
 
 interface Member {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -14,33 +14,33 @@ interface Props {
     description: string;
     amount: number;
     date: string;
-    payerId: number;
-    participantIds: number[];
-  }) => void;
+    payerId: string;
+    participantIds: string[];
+  }) => Promise<void>;
 }
-// const AddExpenseModal: React.FC<Props> = ({ groupId, members, onClose, onAdd }) => {
 const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [payerId, setPayerId] = useState<number>(members[0]?.id || 0);
-  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(
-    members.map(m => m.id) // по умолчанию все участники
+  const [payerId, setPayerId] = useState<string>(members[0]?.id || '');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    members.map(m => m.id)
   );
 
   const [participantsError, setParticipantsError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setParticipantsError(''); // сброс
+    setParticipantsError('');
 
     if (!description || !amount || !payerId) {
         alert('Заполните все поля');
         return;
     }
 
-    if (selectedParticipants.length === 0) {
-        setParticipantsError('Выберите хотя бы одного участника');
+    if (selectedParticipants.length < 2) {
+        setParticipantsError('По правилам сервера в расходе должны участвовать минимум 2 человека');
         return;
     }
 
@@ -49,18 +49,25 @@ const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
         return;
     }
 
-    onAdd({
-      description,
-      amount: parseFloat(amount),
-      date,
-      payerId,
-      participantIds: selectedParticipants,
-    });
-
-    onClose();
+    setLoading(true);
+    try {
+      await onAdd({
+        description,
+        amount: parseFloat(amount),
+        date,
+        payerId,
+        participantIds: selectedParticipants,
+      });
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Не удалось сохранить расход';
+      setParticipantsError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleParticipant = (memberId: number) => {
+  const toggleParticipant = (memberId: string) => {
     setSelectedParticipants(prev =>
       prev.includes(memberId)
         ? prev.filter(id => id !== memberId)
@@ -134,8 +141,8 @@ const AddExpenseModal: React.FC<Props> = ({ members, onClose, onAdd }) => {
             )}
 
           <div className={styles.buttons}>
-            <button type="submit">Добавить</button>
-            <button type="button" onClick={onClose} className={styles.cancel}>
+            <button type="submit" disabled={loading}>{loading ? 'Сохранение...' : 'Добавить'}</button>
+            <button type="button" onClick={onClose} className={styles.cancel} disabled={loading}>
               Отмена
             </button>
           </div>

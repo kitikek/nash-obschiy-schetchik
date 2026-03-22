@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import styles from './EditGroupModal.module.css';
 
 interface GroupData {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   currency: string;
-  authorId: number;
+  authorId: string;
 }
 
 interface Props {

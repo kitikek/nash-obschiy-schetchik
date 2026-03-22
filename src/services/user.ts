@@ -1,24 +1,52 @@
-// src/services/user.ts
-import { expenses, expenseParticipants } from '../mocks/db';
-// import { delay } from './utils'; // если есть общая функция задержки
+import { api } from "./api"
+import { mapUserDto, type UserDto } from "./apiMappers"
+import type { User } from "../types/user"
 
-export const getUserTotalExpenses = async (userId: number): Promise<number> => {
-  // await delay();
-  // Ищем все расходы, где пользователь был плательщиком
-  const payerParticipantIds = expenseParticipants
-    .filter(ep => ep.userId === userId && ep.isPayer)
-    .map(ep => ep.expenseId);
-  
-  const total = expenses
-    .filter(exp => payerParticipantIds.includes(exp.id))
-    .reduce((sum, exp) => sum + exp.amount, 0);
-  
-  return total;
-};
+export interface MeStats {
+  groups_count: number
+  expenses_count: number
+  member_since?: string
+  total_turnover: number | string
+}
 
-export const getUserGroupsCount = async (userId: number): Promise<number> => {
-  // await delay();
-  // Считаем количество групп, где пользователь является участником
-  const { groupMembers } = await import('../mocks/db');
-  return groupMembers.filter(gm => gm.userId === userId).length;
-};
+export interface MeResponse {
+  user: UserDto
+  stats: MeStats
+}
+
+export const fetchMe = async (): Promise<{ user: User; stats: MeStats }> => {
+  const { data } = await api.get<MeResponse>("/users/me")
+  return { user: mapUserDto(data.user), stats: data.stats }
+}
+
+export const updateMe = async (body: {
+  username?: string
+  phone?: string
+}): Promise<User> => {
+  const { data } = await api.put<{ user: UserDto }>("/users/me", {
+    ...(body.username !== undefined ? { username: body.username } : {}),
+    ...(body.phone !== undefined ? { phone: body.phone } : {}),
+  })
+  return mapUserDto(data.user)
+}
+
+export const changePassword = async (
+  old_password: string,
+  new_password: string
+): Promise<void> => {
+  await api.patch("/users/me/password", { old_password, new_password })
+}
+
+export interface FoundUser {
+  id: string
+  username: string
+}
+
+export const findUserByEmail = async (email: string): Promise<FoundUser | null> => {
+  try {
+    const { data } = await api.post<FoundUser>("/users/find", { email })
+    return data
+  } catch (e) {
+    return null
+  }
+}
