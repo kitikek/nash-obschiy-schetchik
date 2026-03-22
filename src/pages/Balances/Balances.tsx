@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import Navbar from '../../components/Navbar/Navbar'
 import GoBackButton from '../../components/GoBackButton/GoBackButton'
 import { useAuth } from '../../contexts/AuthContext'
@@ -35,67 +35,67 @@ const Balances: React.FC = () => {
   const [credits, setCredits] = useState<Credit[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user) return
+    setLoading(true)
+    const groups = await getGroups()
+    const debtsList: Debt[] = []
+    const creditsList: Credit[] = []
 
-    const fetchBalances = async () => {
-      const groups = await getGroups()
-      const debtsList: Debt[] = []
-      const creditsList: Credit[] = []
-
-      for (const group of groups) {
-        let members: { id: string; name: string }[] = []
-        try {
-          members = await getGroupMembers(group.id)
-        } catch (error) {
-          console.error(`Не удалось загрузить участников группы ${group.id}`, error)
-        }
-
-        const getName = (id: string | number) => {
-          const userId = String(id)
-          const member = members.find(m => String(m.id) === userId)
-          return member?.name ?? `Пользователь ${userId}`
-        }
-
-        const me = await getGroupBalancesMe(group.id)
-
-        me.oweTo.forEach((row) => {
-          debtsList.push({
-            to: getName(row.userId),
-            amount: row.amount,
-            currency: group.currency,
-            groupName: group.name,
-            groupId: group.id,
-            debtorId: user.id,
-            creditorId: row.userId,
-          })
-        })
-
-        me.owedBy.forEach((row) => {
-          creditsList.push({
-            from: getName(row.userId),
-            amount: row.amount,
-            currency: group.currency,
-            groupName: group.name,
-            groupId: group.id,
-            debtorId: row.userId,
-            creditorId: user.id,
-          })
-        })
+    for (const group of groups) {
+      let members: { id: string; name: string }[] = []
+      try {
+        members = await getGroupMembers(group.id)
+      } catch (error) {
+        console.error(`Не удалось загрузить участников группы ${group.id}`, error)
       }
 
-      setDebts(debtsList)
-      setCredits(creditsList)
-      setLoading(false)
+      const getName = (id: string | number) => {
+        const userId = String(id)
+        const member = members.find(m => String(m.id) === userId)
+        return member?.name ?? `Пользователь ${userId}`
+      }
+
+      const me = await getGroupBalancesMe(group.id)
+
+      me.oweTo.forEach((row) => {
+        debtsList.push({
+          to: getName(row.userId),
+          amount: row.amount,
+          currency: group.currency,
+          groupName: group.name,
+          groupId: group.id,
+          debtorId: user.id,
+          creditorId: row.userId,
+        })
+      })
+
+      me.owedBy.forEach((row) => {
+        creditsList.push({
+          from: getName(row.userId),
+          amount: row.amount,
+          currency: group.currency,
+          groupName: group.name,
+          groupId: group.id,
+          debtorId: row.userId,
+          creditorId: user.id,
+        })
+      })
     }
 
-    fetchBalances()
+    setDebts(debtsList)
+    setCredits(creditsList)
+    setLoading(false)
   }, [user])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handlePay = async (groupId: string, creditorId: string, debtorId: string, amount: number) => {
     try {
       await payBalance(groupId, creditorId, debtorId, amount)
-      window.location.reload()
+      await loadData()
     } catch (err) {
       console.error(err)
       alert('Ошибка при оплате')
@@ -119,7 +119,7 @@ const Balances: React.FC = () => {
             <ul className={styles.list}>
               {debts.map((d, idx) => (
                 <li key={idx} className={styles.item}>
-                  <span>
+                  <span className={styles.itemText}>
                     {d.to} в группе «{d.groupName}»
                   </span>
                   <div className={styles.itemActions}>
@@ -147,7 +147,7 @@ const Balances: React.FC = () => {
             <ul className={styles.list}>
               {credits.map((c, idx) => (
                 <li key={idx} className={styles.item}>
-                  <span>
+                  <span className={styles.itemText}>
                     {c.from} в группе «{c.groupName}»
                   </span>
                   <div className={styles.itemActions}>

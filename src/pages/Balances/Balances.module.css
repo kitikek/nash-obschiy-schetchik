@@ -32,19 +32,27 @@
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid #eee;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12px;
+}
+
+.itemText {
+  flex: 1;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .itemActions {
   display: flex;
   gap: 16px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .amount {
   font-weight: 500;
   font-size: 16px;
+  white-space: nowrap;
 }
 
 .payButton {
@@ -56,6 +64,7 @@
   cursor: pointer;
   border-radius: 4px;
   transition: opacity 0.2s;
+  white-space: nowrap;
 }
 
 .payButton:hover {
@@ -65,4 +74,15 @@
 .empty {
   color: #666;
   font-style: italic;
+}
+
+@media (max-width: 480px) {
+  .item {
+    flex-wrap: wrap;
+  }
+  .itemActions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
 }
